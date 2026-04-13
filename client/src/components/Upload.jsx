@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { ImagePlus, CheckCircle2, XCircle } from 'lucide-react';
-import nsfwjs from 'nsfwjs';
+import * as nsfwjs from 'nsfwjs';
 import ColorThief from 'colorthief';
 
 const NSFW_MODEL_URL = 'https://nsfw-model-1.s3.us-east-2.amazonaws.com/quant_nsfw_mobilenet/';
