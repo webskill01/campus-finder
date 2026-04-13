@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { ImagePlus, CheckCircle2, XCircle } from 'lucide-react';
 import * as nsfwjs from 'nsfwjs';
-import ColorThief from 'colorthief';
+import * as ColorThiefModule from 'colorthief';
 
 const NSFW_MODEL_URL = 'https://nsfw-model-1.s3.us-east-2.amazonaws.com/quant_nsfw_mobilenet/';
 
@@ -12,7 +12,8 @@ function toHex([r, g, b]) {
   return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
 }
 
-const ct = new ColorThief();
+const CT = ColorThiefModule.default ?? ColorThiefModule;
+const ct = new CT();
 
 export default function Upload({ onResult }) {
   const [status, setStatus] = useState(null); // null|'scanning'|'safe'|'unsafe'

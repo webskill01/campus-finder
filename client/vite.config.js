@@ -10,5 +10,13 @@ export default defineConfig({
         changeOrigin: true,
       }
     }
-  }
+  },
+  optimizeDeps: {
+    include: ['nsfwjs', 'colorthief'],
+  },
+  build: {
+    commonjsOptions: {
+      include: [/nsfwjs/, /colorthief/, /node_modules/],
+    },
+  },
 })
