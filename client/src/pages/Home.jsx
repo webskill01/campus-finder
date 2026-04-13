@@ -1,15 +1,15 @@
-import { useEffect, useState, useCallback } from 'react';
-import { Search } from 'lucide-react';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { Search, SlidersHorizontal } from 'lucide-react';
 import { getItems, searchItems } from '../api/api';
 import { useAppState, useAppDispatch } from '../context/AppContext';
 import { useDebounce } from '../hooks/useDebounce';
 import { isAI } from '../components/SearchBar';
 import SearchBar from '../components/SearchBar';
-import ChipRow from '../components/ChipRow';
 import TabBar from '../components/TabBar';
 import ItemCard from '../components/ItemCard';
 import ResolvedStrip from '../components/ResolvedStrip';
 import FAB from '../components/FAB';
+import FilterPanel from '../components/FilterPanel';
 
 function usePageSize() {
   const get = () => window.innerWidth >= 1024 ? 20 : 12;
@@ -25,11 +25,15 @@ function usePageSize() {
 export default function Home() {
   const { tab, page, category, sort, dateRange, query } = useAppState();
   const dispatch = useAppDispatch();
-  const [items, setItems]     = useState([]);
-  const [total, setTotal]     = useState(0);
+  const [items, setItems] = useState([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
+  const [filterExiting, setFilterExiting] = useState(false);
+  const filterTimer = useRef(null);
   const debouncedQ = useDebounce(query, isAI(query) ? 800 : 300);
   const pageSize = usePageSize();
+  const hasFilters = sort !== 'recent' || dateRange !== 'all';
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -49,13 +53,26 @@ export default function Home() {
   }, [tab, page, category, sort, dateRange, debouncedQ, pageSize]);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { dispatch({ type: 'SET_PAGE', payload: 1 }); }, [pageSize]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  const desktop = () => window.innerWidth >= 768;
+
+  function openFilter() {
+    clearTimeout(filterTimer.current);
+    if (!showFilter) { setFilterExiting(false); setShowFilter(true); }
+  }
+  function closeFilter() {
+    setFilterExiting(true);
+    setTimeout(() => { setShowFilter(false); setFilterExiting(false); }, 155);
+  }
+  function scheduleFilterClose() { filterTimer.current = setTimeout(closeFilter, 80); }
+  function cancelFilterClose() { clearTimeout(filterTimer.current); }
 
   return (
     <div>
       <SearchBar />
-      <ChipRow />
       <TabBar
         foundCount={tab === 'found' ? total : undefined}
         lostCount={tab === 'lost' ? total : undefined}
@@ -64,9 +81,31 @@ export default function Home() {
       <div className="items-section">
         <div key={`meta-${tab}`} className="section-meta tab-content">
           <strong>{total} {tab} item{total !== 1 ? 's' : ''}</strong>
-          <span>
-            {dateRange === 'today' ? 'Today' : dateRange === 'week' ? 'This week' : 'All time'} · Campus-wide
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>
+              {dateRange === 'today' ? 'Today' : dateRange === 'week' ? 'This week' : 'All time'} · Campus-wide
+            </span>
+            <button
+              className={`filter-btn${hasFilters ? ' has-filters' : ''}`}
+              onClick={() => { if (!desktop()) showFilter ? closeFilter() : openFilter(); }}
+              onMouseEnter={() => desktop() && openFilter()}
+              onMouseLeave={() => desktop() && scheduleFilterClose()}
+              aria-label="Filters"
+            >
+              <SlidersHorizontal size={12} />
+              Filter
+              {hasFilters && <span className="filter-count">!</span>}
+            </button>
+          </div>
+          {showFilter && (
+            <FilterPanel
+              onClose={closeFilter}
+              exiting={filterExiting}
+              hover={desktop()}
+              onPanelEnter={cancelFilterClose}
+              onPanelLeave={scheduleFilterClose}
+            />
+          )}
         </div>
 
         {loading && (

@@ -7,9 +7,9 @@ const { v2: cloudinary } = require('cloudinary');
 const auth = require('../middleware/auth');
 const Token = require('../models/Token');
 const { extractTags } = require('../services/tagger');
-const { sendManageEmail, sendInterestEmail } = require('../services/mailer');
+const { sendManageEmail, sendInterestEmail, sendRemovalEmail } = require('../services/mailer');
 const { enrichItem, parseNLSearch } = require('../services/groq');
-const { searchLim } = require('../middleware/rateLimit');
+const { searchLim, interestLim } = require('../middleware/rateLimit');
 
 const router = express.Router();
 
@@ -188,7 +188,7 @@ router.get('/resolved', async (req, res) => {
 router.get('/manage/:token', async (req, res) => {
   try {
     const item = await Item.findOne({ manageToken: req.params.token })
-      .select('-__v')
+      .select('-__v -reportedBy')
       .lean();
     if (!item) return res.status(404).json({ error: 'Item not found or invalid token' });
     res.json(item);
@@ -207,7 +207,7 @@ router.get('/:id', async (req, res) => {
 
     const item = await Item.findById(req.params.id)
       .populate('topMatches.itemId', 'title category location type image dominantColor')
-      .select('-__v')
+      .select('-__v -reportedBy')
       .lean();
 
     if (!item) {
@@ -225,6 +225,7 @@ router.get('/:id', async (req, res) => {
 router.post('/', auth, upload.single('image'), async (req, res) => {
   try {
     const { gmail, rollNo } = req.user;
+    const { name: posterName = '' } = req.user;
 
     // Rate limit: max 3 posts per day
     const tokenDoc = await Token.findOne({ gmail });
@@ -243,6 +244,20 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
     }
     if (!['lost', 'found'].includes(type)) {
       return res.status(400).json({ error: 'type must be "lost" or "found"' });
+    }
+
+    // Validate itemDate
+    const parsedDate = new Date(itemDate);
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ error: 'Invalid date' });
+    }
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    if (parsedDate > now) {
+      return res.status(400).json({ error: 'Item date cannot be in the future' });
+    }
+    if (parsedDate < sevenDaysAgo) {
+      return res.status(400).json({ error: 'Item date cannot be more than 7 days in the past' });
     }
 
     // Sanitize text inputs
@@ -265,6 +280,7 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
       itemDate: new Date(itemDate),
       posterGmail: gmail,
       posterRollNo: rollNo,
+      posterName,
       manageToken,
       dominantColor: req.body.dominantColor || null,
       enriched: {
@@ -312,7 +328,7 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
     }
 
     // Send manage email async (fire-and-forget)
-    sendManageEmail({ to: gmail, title: cleanTitle, manageToken });
+    sendManageEmail({ to: gmail, name: posterName, title: cleanTitle, manageToken });
 
     res.status(201).json({
       item: {
@@ -448,7 +464,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // POST /api/items/:id/interest — notify poster (auth required)
-router.post('/:id/interest', auth, async (req, res) => {
+router.post('/:id/interest', interestLim, auth, async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ error: 'Invalid item ID' });
@@ -464,14 +480,66 @@ router.post('/:id/interest', auth, async (req, res) => {
     const message = typeof req.body.message === 'string' ? req.body.message.trim().slice(0, 500) : '';
     await sendInterestEmail({
       to: item.posterGmail,
+      posterName: item.posterName || '',
       title: item.title,
       interestedGmail: req.user.gmail,
+      interestedName: req.user.name || '',
       message
     });
 
     res.json({ message: 'Interest sent' });
   } catch (err) {
     console.error('Interest route error:', err.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/items/:id/report — flag item as suspicious (auth required)
+router.post('/:id/report', auth, async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ error: 'Invalid item ID' });
+    }
+
+    // Check item exists and get posterGmail for self-report check
+    const item = await Item.findOne({ _id: req.params.id, status: 'active' }).select('posterGmail posterName title image');
+    if (!item) return res.status(404).json({ error: 'Item not found or not active' });
+
+    if (item.posterGmail === req.user.gmail) {
+      return res.status(400).json({ error: 'You cannot report your own post' });
+    }
+
+    // Atomic: only update if this user hasn't reported yet ($ne prevents duplicates)
+    const updated = await Item.findOneAndUpdate(
+      { _id: req.params.id, status: 'active', reportedBy: { $ne: req.user.gmail } },
+      { $addToSet: { reportedBy: req.user.gmail }, $inc: { reportCount: 1 } },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(409).json({ error: 'You have already reported this post' });
+    }
+
+    const count = updated.reportCount;
+
+    if (count >= 5) {
+      if (updated.image?.publicId) {
+        try {
+          await cloudinary.uploader.destroy(updated.image.publicId);
+        } catch (e) {
+          console.error('Cloudinary delete on report:', e.message);
+        }
+      }
+      await Item.findByIdAndDelete(req.params.id);
+      if (updated.posterGmail) {
+        sendRemovalEmail({ to: updated.posterGmail, name: updated.posterName || '', title: updated.title });
+      }
+      return res.json({ removed: true });
+    }
+
+    res.json({ reportCount: count, warning: count >= 3 });
+  } catch (err) {
+    console.error('Report route error:', err.message);
     res.status(500).json({ error: 'Server error' });
   }
 });

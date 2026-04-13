@@ -1,58 +1,22 @@
 const mongoose = require('mongoose');
 
 const itemSchema = new mongoose.Schema({
-  type: {
-    type: String,
-    enum: ['lost', 'found'],
-    required: true
-  },
-  status: {
-    type: String,
-    enum: ['active', 'resolved', 'expired'],
-    default: 'active'
-  },
-  title: {
-    type: String,
-    required: true,
-    maxlength: 100
-  },
+  type: { type: String, enum: ['lost', 'found'], required: true },
+  status: { type: String, enum: ['active', 'resolved', 'expired'], default: 'active' },
+  title: { type: String, required: true, maxlength: 100 },
   category: {
     type: String,
-    enum: ['phone', 'keys', 'bag', 'documents', 'electronics', 'accessories', 'clothing', 'wallet', 'bottle', 'glasses', 'headphones', 'id-card', 'stationery', 'other'],
+    enum: ['phone','keys','bag','documents','electronics','accessories','clothing','wallet','bottle','glasses','headphones','id-card','stationery','other'],
     required: true
   },
-  location: {
-    type: String,
-    required: true,
-    maxlength: 100,
-    trim: true
-  },
-  description: {
-    type: String,
-    required: true,
-    maxlength: 500
-  },
-  itemDate: {
-    type: Date,
-    required: true
-  },
-  posterGmail: {
-    type: String,
-    required: true
-  },
-  posterRollNo: {
-    type: String,
-    required: true
-  },
-  manageToken: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  image: {
-    url: String,
-    publicId: String
-  },
+  location: { type: String, required: true, maxlength: 100, trim: true },
+  description: { type: String, required: true, maxlength: 500 },
+  itemDate: { type: Date, required: true },
+  posterGmail: { type: String, required: true },
+  posterRollNo: { type: String, required: true },
+  posterName: { type: String, default: '' },
+  manageToken: { type: String, required: true, unique: true },
+  image: { url: String, publicId: String },
   dominantColor: String,
   enriched: {
     cleanDescription: String,
@@ -63,21 +27,18 @@ const itemSchema = new mongoose.Schema({
     enrichedAt: Date
   },
   topMatches: [{
-    itemId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Item'
-    },
+    itemId: { type: mongoose.Schema.Types.ObjectId, ref: 'Item' },
     score: Number,
     signals: [String]
   }],
+  reportedBy: [{ type: String }],
+  reportCount: { type: Number, default: 0 },
   resolvedAt: Date,
   expiresAt: {
     type: Date,
     default: () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
   }
-}, {
-  timestamps: { createdAt: true, updatedAt: false }
-});
+}, { timestamps: { createdAt: true, updatedAt: false } });
 
 itemSchema.index({ title: 'text', description: 'text' });
 itemSchema.index({ status: 1, type: 1, category: 1 });

@@ -20,6 +20,23 @@ export default function PostPopup({ onClose }) {
 
   async function submit(e) {
     e.preventDefault();
+
+    // Client-side date validation
+    const selectedDate = new Date(form.itemDate);
+    const now = new Date();
+    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+    if (selectedDate > todayEnd) {
+      setError('Item date cannot be in the future.');
+      return;
+    }
+    if (selectedDate < sevenDaysAgo) {
+      setError('Item date cannot be more than 7 days in the past.');
+      return;
+    }
+
     setState('submitting');
     try {
       const token = localStorage.getItem('cf_token');

@@ -25,4 +25,13 @@ const searchLim = rateLimit({
   message: { error: 'Too many search requests, please slow down.' }
 });
 
-module.exports = { general, authLimit, searchLim };
+// Interest emails: 5 per IP per hour to prevent spam
+const interestLim = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many interest requests. Please wait an hour before trying again.' }
+});
+
+module.exports = { general, authLimit, searchLim, interestLim };

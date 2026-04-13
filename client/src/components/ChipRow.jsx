@@ -1,83 +1,85 @@
-import { SlidersHorizontal, Smartphone, Key, Briefcase, FileText, Laptop, Watch, Shirt, Package, Wallet, GlassWater, Glasses, Headphones, CreditCard, PenLine } from 'lucide-react';
-import { useState, useRef } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../context/AppContext';
-import FilterPanel from './FilterPanel';
 
 const CATEGORIES = [
-  { id: 'all',         label: 'All',         icon: null },
-  { id: 'phone',       label: 'Phone',       icon: <Smartphone size={12} /> },
-  { id: 'keys',        label: 'Keys',        icon: <Key size={12} /> },
-  { id: 'bag',         label: 'Bag',         icon: <Briefcase size={12} /> },
-  { id: 'documents',   label: 'Docs',        icon: <FileText size={12} /> },
-  { id: 'electronics', label: 'Electronics', icon: <Laptop size={12} /> },
-  { id: 'accessories', label: 'Accessories', icon: <Watch size={12} /> },
-  { id: 'clothing',    label: 'Clothing',    icon: <Shirt size={12} /> },
-  { id: 'wallet',      label: 'Wallet',      icon: <Wallet size={12} /> },
-  { id: 'bottle',      label: 'Bottle',      icon: <GlassWater size={12} /> },
-  { id: 'glasses',     label: 'Glasses',     icon: <Glasses size={12} /> },
-  { id: 'headphones',  label: 'Headphones',  icon: <Headphones size={12} /> },
-  { id: 'id-card',     label: 'ID Card',     icon: <CreditCard size={12} /> },
-  { id: 'stationery',  label: 'Stationery',  icon: <PenLine size={12} /> },
-  { id: 'other',       label: 'Other',       icon: <Package size={12} /> },
+  { id: 'all', label: 'All' },
+  { id: 'phone', label: 'Phone' },
+  { id: 'keys', label: 'Keys' },
+  { id: 'bag', label: 'Bag' },
+  { id: 'documents', label: 'Docs' },
+  { id: 'electronics', label: 'Electronics' },
+  { id: 'accessories', label: 'Accessories' },
+  { id: 'clothing', label: 'Clothing' },
+  { id: 'wallet', label: 'Wallet' },
+  { id: 'bottle', label: 'Bottle' },
+  { id: 'glasses', label: 'Glasses' },
+  { id: 'headphones', label: 'Headphones' },
+  { id: 'id-card', label: 'ID Card' },
+  { id: 'stationery', label: 'Stationery' },
+  { id: 'other', label: 'Other' },
 ];
 
 const desktop = () => window.innerWidth >= 768;
 
-export default function ChipRow() {
-  const { category, sort, dateRange } = useAppState();
+export default function CategoryButton() {
+  const { category } = useAppState();
   const dispatch = useAppDispatch();
-  const [showFilter, setShowFilter] = useState(false);
+  const [open, setOpen] = useState(false);
   const [exiting, setExiting] = useState(false);
   const closeTimer = useRef(null);
-  const hasFilters = sort !== 'recent' || dateRange !== 'all';
 
-  function open() {
+  useEffect(() => () => clearTimeout(closeTimer.current), []);
+
+  const activeLabel = CATEGORIES.find(c => c.id === category)?.label || 'All';
+  const isFiltered = category !== 'all';
+
+  function openPanel() {
     clearTimeout(closeTimer.current);
-    if (!showFilter) { setExiting(false); setShowFilter(true); }
+    if (!open) { setExiting(false); setOpen(true); }
   }
-  function close() {
+  function closePanel() {
     setExiting(true);
-    setTimeout(() => { setShowFilter(false); setExiting(false); }, 155);
+    setTimeout(() => { setOpen(false); setExiting(false); }, 155);
   }
   function scheduleClose() {
-    closeTimer.current = setTimeout(close, 80);
+    closeTimer.current = setTimeout(closePanel, 80);
   }
-  function cancelClose() {
-    clearTimeout(closeTimer.current);
+  function cancelClose() { clearTimeout(closeTimer.current); }
+
+  function select(id) {
+    dispatch({ type: 'SET_CATEGORY', payload: id });
+    closePanel();
   }
 
   return (
-    <div className="chip-section">
-      <div className="chip-row-wrap">
-        <div className="chip-row">
+    <div className="cat-section">
+      <button
+        className={`cat-btn${isFiltered ? ' active' : ''}`}
+        onClick={() => { if (!desktop()) open ? closePanel() : openPanel(); }}
+        onMouseEnter={() => desktop() && openPanel()}
+        onMouseLeave={() => desktop() && scheduleClose()}
+        aria-label="Category filter"
+      >
+        {activeLabel} <ChevronDown size={12} />
+      </button>
+      {open && (
+        <div
+          className={`cat-panel${exiting ? ' exiting' : ''}`}
+          onMouseEnter={() => desktop() && cancelClose()}
+          onMouseLeave={() => desktop() && scheduleClose()}
+        >
+          {!desktop() && <div onClick={closePanel} style={{ position: 'fixed', inset: 0, zIndex: 199 }} />}
           {CATEGORIES.map(c => (
-            <button key={c.id} className={`chip${category === c.id ? ' active' : ''}`}
-              onClick={() => dispatch({ type: 'SET_CATEGORY', payload: c.id })}>
-              {c.icon}
+            <button
+              key={c.id}
+              className={`cat-option${category === c.id ? ' active' : ''}`}
+              onClick={() => select(c.id)}
+            >
               {c.label}
             </button>
           ))}
         </div>
-        <button
-          className={`filter-btn${hasFilters ? ' has-filters' : ''}`}
-          onClick={() => { if (!desktop()) showFilter ? close() : open(); }}
-          onMouseEnter={() => desktop() && open()}
-          onMouseLeave={() => desktop() && scheduleClose()}
-          aria-label="Filters"
-        >
-          <SlidersHorizontal size={12} />
-          Filter
-          {hasFilters && <span className="filter-count">!</span>}
-        </button>
-      </div>
-      {showFilter && (
-        <FilterPanel
-          onClose={close}
-          exiting={exiting}
-          hover={desktop()}
-          onPanelEnter={cancelClose}
-          onPanelLeave={scheduleClose}
-        />
       )}
     </div>
   );

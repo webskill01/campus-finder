@@ -1,4 +1,5 @@
 require('dotenv').config();
+const mongoose = require('mongoose');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -53,6 +54,15 @@ connectDB().then(() => {
     expiryJob.start();
     console.log('Expiry cron job started');
   });
+
+  // Keep DB connection warm every 4 min — prevents Atlas free tier auto-pause
+  setInterval(async () => {
+    try {
+      await mongoose.connection.db.admin().ping();
+    } catch (e) {
+      console.warn('DB keep-warm ping failed:', e.message);
+    }
+  }, 4 * 60 * 1000);
 });
 
 module.exports = app;

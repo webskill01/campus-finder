@@ -8,18 +8,18 @@ async function request(url, opts = {}) {
   const res = await fetch(url, opts)
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }))
-    const error = new Error(err.message || 'Request failed')
+    const error = new Error(err.error || err.message || 'Request failed')
     error.status = res.status
     throw error
   }
   return res.json()
 }
 
-export async function authVerify({ gmail, rollNo, dob }) {
+export async function authVerify({ gmail, rollNo, dob, name }) {
   return request(`${BASE}/auth/verify`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ gmail, rollNo, dob }),
+    body: JSON.stringify({ gmail, rollNo, dob, name }),
   })
 }
 
@@ -114,4 +114,19 @@ export async function adminGetStats() {
 
 export async function getItemByManageToken(token) {
   return request(`${BASE}/items/manage/${encodeURIComponent(token)}`)
+}
+
+export async function updateProfile(data, token) {
+  return request(`${BASE}/auth/profile`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(data),
+  })
+}
+
+export async function reportItem(id, token) {
+  return request(`${BASE}/items/${id}/report`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  })
 }

@@ -5,19 +5,16 @@ import { getItem } from '../api/api';
 export default function MatchCard({ match, onMatchClick, style }) {
   const dispatch = useAppDispatch();
 
-  // title/category/location are either stored in the match (new records)
-  // or merged in by DetailPopup's pre-fetch cache (old records).
-  // No per-card fetch needed — data arrives ready.
   async function open() {
     if (onMatchClick) { onMatchClick(match); return; }
-    const item = await getItem(match.itemId).catch(() => null);
+    const id = match.itemId?._id || match.itemId;
+    const item = await getItem(id).catch(() => null);
     if (item) dispatch({ type: 'SET_ACTIVE_ITEM', payload: item });
   }
 
   return (
     <div className="match-card" style={style} onClick={open} role="button" tabIndex={0}
       onKeyDown={e => e.key === 'Enter' && open()}>
-      <span className="match-score">{Math.round(match.score)}%</span>
       <div className="match-info">
         <div className="match-title">{match.title || 'View item'}</div>
         <div className="match-sub">

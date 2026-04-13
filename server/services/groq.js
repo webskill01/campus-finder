@@ -46,7 +46,7 @@ async function enrichItem(item) {
       },
       {
         role: 'user',
-        content: `Title: ${item.title}, Category: ${item.category}, Description: ${item.description}\nReturn: { cleanDescription, keywords: string[], color: 6-digit hex (#rrggbb) or null, brand: string|null, iconName: string }\niconName must be one of: ${ICON_LIST.join(',')}`
+        content: `Title: ${item.title}, Category: ${item.category}, Description: ${item.description}\nReturn: { cleanDescription, keywords: string[], color: common color name (e.g. "black", "blue", "red", "white") or null, brand: string|null, iconName: string }\niconName must be one of: ${ICON_LIST.join(',')}`
       }
     ];
 
@@ -59,8 +59,12 @@ async function enrichItem(item) {
 
     await Item.findByIdAndUpdate(item._id, {
       'enriched.cleanDescription': result.cleanDescription || null,
-      'enriched.keywords': Array.isArray(result.keywords) ? result.keywords.slice(0, 20) : [],
-      'enriched.color': (result.color && /^#[0-9a-fA-F]{6}$/.test(result.color)) ? result.color : null,
+      'enriched.keywords': Array.isArray(result.keywords)
+        ? result.keywords.filter(k => k && !/^#[0-9a-fA-F]{3,6}$/.test(k)).slice(0, 20)
+        : [],
+      'enriched.color': (result.color && typeof result.color === 'string' && !/^#/.test(result.color))
+        ? result.color
+        : null,
       'enriched.brand': result.brand || null,
       'enriched.iconName': iconName,
       'enriched.enrichedAt': new Date()

@@ -15,18 +15,15 @@ const CATEGORY_ICONS = {
 
 export default function ItemCard({ item }) {
   const dispatch = useAppDispatch();
-  const topMatch = item.topMatches?.[0];
-  const showMatch = topMatch && topMatch.score > 40;
-  function open() { dispatch({ type:'OPEN_POPUP', payload:{ popup:'detail', activeItem:item } }); }
+  function open() { dispatch({ type: 'OPEN_POPUP', payload: { popup: 'detail', activeItem: item } }); }
   return (
-    <div className="item-card" onClick={open} role="button" tabIndex={0} onKeyDown={e => e.key==='Enter' && open()}>
+    <div className="item-card" onClick={open} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && open()}>
       <div className="card-img">
         {item.image?.url
           ? <img src={item.image.url} alt={item.title} loading="lazy" />
           : <span className="card-no-img">{CATEGORY_ICONS[item.category] ?? <Package size={26} />}</span>
         }
-        <span className={`type-pill type-${item.type}`}>{item.type==='found'?'Found':'Lost'}</span>
-        {showMatch && <span className="match-pill">{Math.round(topMatch.score)}% match</span>}
+        <span className={`type-pill type-${item.type}`}>{item.type === 'found' ? 'Found' : 'Lost'}</span>
       </div>
       <div className="card-color-bar" style={{
         background: item.dominantColor
@@ -38,11 +35,11 @@ export default function ItemCard({ item }) {
           <span className="card-cat-icon">{CATEGORY_ICONS[item.category] ?? <Package size={10} />}</span>
           <span className="cat-label">{item.category}</span>
         </div>
-        <div className="card-title">{item.enriched?.cleanDescription||item.title}</div>
+        <div className="card-title">{item.enriched?.cleanDescription || item.title}</div>
         <div className="card-footer">
-          <span className="card-loc"><MapPin size={10}/>{item.location?.replace(/-/g,' ') ?? ''}</span>
+          <span className="card-loc"><MapPin size={10} />{item.location?.replace(/-/g, ' ') ?? ''}</span>
           <span className="card-time">{timeAgo(item.createdAt)}</span>
-          {item.dominantColor && <span className="color-swatch" style={{ background:item.dominantColor }} />}
+          {item.dominantColor && <span className="color-swatch" style={{ background: item.dominantColor }} />}
         </div>
       </div>
     </div>
