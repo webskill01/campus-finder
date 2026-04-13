@@ -1,19 +1,24 @@
 import { useState, useRef } from 'react';
 import { ImagePlus, CheckCircle2, XCircle } from 'lucide-react';
-import * as nsfwjs from 'nsfwjs';
-import * as ColorThiefModule from 'colorthief';
-
-const NSFW_MODEL_URL = 'https://nsfw-model-1.s3.us-east-2.amazonaws.com/quant_nsfw_mobilenet/';
-
-let nsfwModel = null;
-nsfwjs.load(NSFW_MODEL_URL, { type: 'graph' }).then(m => { nsfwModel = m; }).catch(() => {});
 
 function toHex([r, g, b]) {
   return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
 }
 
-const CT = ColorThiefModule.default ?? ColorThiefModule;
-const ct = new CT();
+// Lazy-loaded model — avoids module-level crash and defers heavy import
+let nsfwModel = null;
+let nsfwLoadPromise = null;
+function ensureNsfwModel() {
+  if (nsfwLoadPromise) return nsfwLoadPromise;
+  nsfwLoadPromise = import('nsfwjs')
+    .then(mod => {
+      const nsfwjs = mod.default ?? mod;
+      return nsfwjs.load(undefined, { type: 'graph' });
+    })
+    .then(m => { nsfwModel = m; })
+    .catch(() => {});
+  return nsfwLoadPromise;
+}
 
 export default function Upload({ onResult }) {
   const [status, setStatus] = useState(null); // null|'scanning'|'safe'|'unsafe'
@@ -31,14 +36,26 @@ export default function Upload({ onResult }) {
       img.crossOrigin = 'anonymous';
       img.src = url;
       await new Promise(res => { img.onload = res; });
+
+      // NSFW check — silently skipped if model fails to load
+      await ensureNsfwModel();
       if (nsfwModel) {
         const preds = await nsfwModel.classify(img);
         const neutral = preds.find(p => p.className === 'Neutral')?.probability ?? 1;
         if (neutral < 0.6) { setStatus('unsafe'); onResult(null); return; }
       }
-      const color = ct.getColor(img);
+
+      // ColorThief — dynamic import avoids CJS interop crash at module level
+      let dominantColor = null;
+      try {
+        const ctMod = await import('colorthief');
+        const CTClass = ctMod.default ?? ctMod;
+        const ct = new CTClass();
+        dominantColor = toHex(ct.getColor(img));
+      } catch { /* color is optional */ }
+
       setStatus('safe');
-      onResult({ file, dominantColor: toHex(color) });
+      onResult({ file, dominantColor });
     } catch {
       setStatus('safe');
       onResult({ file, dominantColor: null });
