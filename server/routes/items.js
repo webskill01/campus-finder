@@ -12,6 +12,7 @@ const { enrichItem, parseNLSearch } = require('../services/groq');
 const { searchLim, interestLim } = require('../middleware/rateLimit');
 
 const router = express.Router();
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -328,8 +329,17 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
       await Token.findOneAndUpdate({ gmail }, { $inc: { postCount: 1 }, lastPostDate: new Date() });
     }
 
-    // Send manage email async (fire-and-forget)
-    sendManageEmail({ to: gmail, name: posterName, title: cleanTitle, manageToken });
+    const manageUrl = `${CLIENT_URL}/manage/${manageToken}`;
+    let mailSent = true;
+    let mailError = null;
+
+    try {
+      await sendManageEmail({ to: gmail, name: posterName, title: cleanTitle, manageToken });
+    } catch (mailErr) {
+      mailSent = false;
+      mailError = mailErr.message;
+      console.error('Manage email delivery failed:', mailErr.message);
+    }
 
     res.status(201).json({
       item: {
@@ -338,7 +348,10 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
         type: item.type,
         category: item.category,
         manageToken: item.manageToken
-      }
+      },
+      mailSent,
+      mailError,
+      manageUrl
     });
   } catch (err) {
     console.error('Item create error:', err.message);
@@ -479,14 +492,18 @@ router.post('/:id/interest', interestLim, auth, async (req, res) => {
     }
 
     const message = typeof req.body.message === 'string' ? req.body.message.trim().slice(0, 500) : '';
-    await sendInterestEmail({
-      to: item.posterGmail,
-      posterName: item.posterName || '',
-      title: item.title,
-      interestedGmail: req.user.gmail,
-      interestedName: req.user.name || '',
-      message
-    });
+    try {
+      await sendInterestEmail({
+        to: item.posterGmail,
+        posterName: item.posterName || '',
+        title: item.title,
+        interestedGmail: req.user.gmail,
+        interestedName: req.user.name || '',
+        message
+      });
+    } catch (mailErr) {
+      return res.status(502).json({ error: `Failed to send email: ${mailErr.message}` });
+    }
 
     res.json({ message: 'Interest sent' });
   } catch (err) {
@@ -533,7 +550,8 @@ router.post('/:id/report', auth, async (req, res) => {
       }
       await Item.findByIdAndDelete(req.params.id);
       if (updated.posterGmail) {
-        sendRemovalEmail({ to: updated.posterGmail, name: updated.posterName || '', title: updated.title });
+        sendRemovalEmail({ to: updated.posterGmail, name: updated.posterName || '', title: updated.title })
+          .catch(err => console.error('Removal email delivery failed:', err.message));
       }
       return res.json({ removed: true });
     }

@@ -6,6 +6,7 @@ import PostPopup from './PostPopup';
 import DetailPopup from './DetailPopup';
 import InterestPopup from './InterestPopup';
 import ProfilePopup from './ProfilePopup';
+import LogoutConfirmPopup from './LogoutConfirmPopup';
 
 export default function Popup() {
   const { popup, activeItem } = useAppState();
@@ -30,6 +31,7 @@ export default function Popup() {
             {popup === 'post'     && <PostPopup onClose={close} />}
             {popup === 'interest' && <InterestPopup item={activeItem} onClose={close} />}
             {popup === 'profile'  && <ProfilePopup onClose={close} />}
+            {popup === 'logout'   && <LogoutConfirmPopup onClose={close} />}
           </div>
         )}
       </div>

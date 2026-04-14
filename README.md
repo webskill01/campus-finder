@@ -2,7 +2,7 @@
 
 Dark-themed single-page web app for campus lost and found. Students report lost/found items. An AI matching engine automatically links them. Groq LLM enriches descriptions and parses natural language search.
 
-**Stack:** React 18 + Vite · Node/Express · MongoDB Atlas · Groq · Cloudinary · Resend
+**Stack:** React 18 + Vite · Node/Express · MongoDB Atlas · Groq · Cloudinary · Brevo SMTP
 
 ---
 
@@ -32,11 +32,17 @@ You need accounts and credentials from these services before running the app.
    CLOUDINARY_API_SECRET=
    ```
 
-### 4. Resend (free tier — 100 emails/day)
-1. Go to [resend.com](https://resend.com) → Sign up
-2. API Keys → Create API Key
-3. Domains → Add and verify your domain (required for production)
-4. Add to `.env` as `RESEND_API_KEY=re_...`
+### 4. Brevo SMTP (free tier — 300 emails/day)
+1. Go to [brevo.com](https://www.brevo.com) → Sign up
+2. Settings → SMTP & API → SMTP
+3. Copy your SMTP login and SMTP key
+4. Verify the sender address or domain you want to use in outgoing mail
+5. Add to `.env`:
+   ```
+   BREVO_SMTP_USER=your_brevo_login@example.com
+   BREVO_SMTP_PASS=xsmtpsib-...
+   MAIL_FROM=CampusFinder <noreply@yourdomain.com>
+   ```
 
 ### 5. Node.js v18+
 - Install from [nodejs.org](https://nodejs.org)
@@ -138,7 +144,9 @@ Copy `.env.example` to `.env` and fill in:
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
 | `CLOUDINARY_API_KEY` | Cloudinary API key |
 | `CLOUDINARY_API_SECRET` | Cloudinary API secret |
-| `RESEND_API_KEY` | Resend API key |
+| `BREVO_SMTP_USER` | Brevo SMTP login |
+| `BREVO_SMTP_PASS` | Brevo SMTP key |
+| `MAIL_FROM` | Verified sender address used in outgoing emails |
 | `ADMIN_PASSWORD` | Password for `/admin` page |
 | `CLIENT_URL` | Frontend URL (for CORS) — `http://localhost:3000` in dev |
 

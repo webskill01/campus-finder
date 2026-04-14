@@ -20,9 +20,9 @@ const CAT_ICONS_LG = {
   stationery: <PenLine size={44} />, other: <Package size={44} />,
 };
 const CAT_LABELS = {
-  phone:'Phone', keys:'Keys', bag:'Bag', documents:'Documents', electronics:'Electronics',
-  accessories:'Accessories', clothing:'Clothing', wallet:'Wallet', bottle:'Bottle',
-  glasses:'Glasses', headphones:'Headphones', 'id-card':'ID Card', stationery:'Stationery', other:'Other',
+  phone: 'Phone', keys: 'Keys', bag: 'Bag', documents: 'Documents', electronics: 'Electronics',
+  accessories: 'Accessories', clothing: 'Clothing', wallet: 'Wallet', bottle: 'Bottle',
+  glasses: 'Glasses', headphones: 'Headphones', 'id-card': 'ID Card', stationery: 'Stationery', other: 'Other',
 };
 
 export default function DetailPopup({ item, onClose }) {
@@ -39,49 +39,51 @@ export default function DetailPopup({ item, onClose }) {
   const [reportConfirm, setReportConfirm] = useState(false);
   const [reportLoading, setReportLoading] = useState(false);
 
-  // Re-sync reported state when navigating to a different item
   useEffect(() => {
     setReported(!!localStorage.getItem(`cf_reported_${currentItem._id}`));
     setReportConfirm(false);
   }, [currentItem._id]);
 
-  // Pre-fetch match item data for topMatches missing title (old DB records)
   useEffect(() => {
     const pending = (currentItem.topMatches || []).filter(m => {
       const id = m.itemId?._id || m.itemId;
       return id && m.score > 40 && !m.title && !fetchedRef.current.has(String(id));
     });
     if (!pending.length) return;
+
     pending.forEach(m => {
       const id = m.itemId?._id || m.itemId;
       if (!id) return;
       fetchedRef.current.add(String(id));
       getItem(id).then(fetched => {
-        if (fetched) setMatchCache(c => ({
-          ...c,
-          [String(id)]: { title: fetched.title, category: fetched.category, location: fetched.location }
-        }));
+        if (fetched) {
+          setMatchCache(c => ({
+            ...c,
+            [String(id)]: { title: fetched.title, category: fetched.category, location: fetched.location }
+          }));
+        }
       }).catch(() => {});
     });
   }, [currentItem]);
 
   if (!currentItem) return null;
 
-  // Only show matches that are the opposite type (lost ↔ found), score > 40
   const matches = (currentItem.topMatches || []).filter(m => m.score > 40);
-
   const desc = currentItem.enriched?.cleanDescription || currentItem.description;
   const tags = [...(currentItem.enriched?.keywords || []), currentItem.enriched?.color, currentItem.enriched?.brand]
     .filter(t => Boolean(t) && !/^#[0-9a-fA-F]{3,6}$/.test(t));
-  const catIcon   = CAT_ICONS[currentItem.category]   ?? <Package size={22} />;
+  const catIcon = CAT_ICONS[currentItem.category] ?? <Package size={22} />;
   const catIconLg = CAT_ICONS_LG[currentItem.category] ?? <Package size={44} />;
-  const catLabel  = CAT_LABELS[currentItem.category]   ?? 'Other';
+  const catLabel = CAT_LABELS[currentItem.category] ?? 'Other';
 
   const isOwnPost = user && currentItem.posterGmail === user.gmail;
   const showReportBtn = user && !isOwnPost && !reported && history.length === 0;
 
   function onInterest() {
-    if (!user) { dispatch({ type: 'OPEN_POPUP', payload: { popup: 'login' } }); return; }
+    if (!user) {
+      dispatch({ type: 'OPEN_POPUP', payload: { popup: 'login' } });
+      return;
+    }
     dispatch({ type: 'OPEN_POPUP', payload: { popup: 'interest', activeItem: currentItem } });
   }
 
@@ -102,11 +104,13 @@ export default function DetailPopup({ item, onClose }) {
     setReportConfirm(false);
   }
 
-  function startReport() {
+  function startReport(e) {
+    e.preventDefault();
     setReportConfirm(true);
   }
 
-  async function confirmReport() {
+  async function confirmReport(e) {
+    e.preventDefault();
     setReportLoading(true);
     try {
       const token = localStorage.getItem('cf_token');
@@ -114,7 +118,10 @@ export default function DetailPopup({ item, onClose }) {
       setReported(true);
       localStorage.setItem(`cf_reported_${currentItem._id}`, '1');
       setReportConfirm(false);
-      if (result.removed) { onClose(); return; }
+      if (result.removed) {
+        onClose();
+        return;
+      }
       if (result.reportCount >= 3) {
         setCurrentItem(c => ({ ...c, reportCount: result.reportCount }));
       }
@@ -123,7 +130,9 @@ export default function DetailPopup({ item, onClose }) {
         setReported(true);
         localStorage.setItem(`cf_reported_${currentItem._id}`, '1');
       }
-    } finally { setReportLoading(false); }
+    } finally {
+      setReportLoading(false);
+    }
   }
 
   return (
@@ -133,23 +142,23 @@ export default function DetailPopup({ item, onClose }) {
       </button>
 
       <div className="detail-grid">
-        {/* Image column */}
         <div className="detail-img-col">
-          <div className={`detail-img-area${currentItem.image?.url ? ' clickable' : ''}`}
-            onClick={() => currentItem.image?.url && setLightbox(true)}>
+          <div
+            className={`detail-img-area${currentItem.image?.url ? ' clickable' : ''}`}
+            onClick={() => currentItem.image?.url && setLightbox(true)}
+          >
             {currentItem.image?.url
               ? <img src={currentItem.image.url} alt={currentItem.title} />
-              : <span className="detail-no-img">{catIconLg}</span>
-            }
+              : <span className="detail-no-img">{catIconLg}</span>}
           </div>
           {currentItem.dominantColor && (
-            <div className="detail-color-bar" style={{
-              background: `linear-gradient(to top, ${currentItem.dominantColor}55, transparent)`
-            }} />
+            <div
+              className="detail-color-bar"
+              style={{ background: `linear-gradient(to top, ${currentItem.dominantColor}55, transparent)` }}
+            />
           )}
         </div>
 
-        {/* Content column */}
         <div className="detail-content-col">
           {history.length > 0 && (
             <button className="detail-back" onClick={handleBack}>
@@ -157,19 +166,7 @@ export default function DetailPopup({ item, onClose }) {
             </button>
           )}
 
-          {/* Type + Location + Time + Report */}
-          <div className="detail-meta-row" style={{ position: 'relative' }}>
-            <span className={`type-pill type-${currentItem.type}`} style={{ position: 'static' }}>
-              {currentItem.type === 'found' ? 'Found' : 'Lost'}
-            </span>
-            {currentItem.location && (
-              <span className="detail-meta-loc">
-                <MapPin size={11} />{currentItem.location.replace(/-/g, ' ')}
-              </span>
-            )}
-            <span className="detail-meta-time">
-              <Clock size={11} />{timeAgo(currentItem.createdAt)}
-            </span>
+          <div className="detail-report-wrap">
             {showReportBtn && !reportConfirm && (
               <button className="report-btn" onClick={startReport} title="Report as suspicious">
                 <Flag size={13} />
@@ -181,40 +178,48 @@ export default function DetailPopup({ item, onClose }) {
                 <span>Flag this post?</span>
                 <button className="rpt-cancel" onClick={() => setReportConfirm(false)}>Cancel</button>
                 <button className="rpt-confirm" onClick={confirmReport} disabled={reportLoading}>
-                  {reportLoading ? '…' : 'Confirm'}
+                  {reportLoading ? '...' : 'Confirm'}
                 </button>
               </div>
             )}
           </div>
 
-          {/* Category */}
+          <div className="detail-meta-row">
+            <span className={`type-pill type-${currentItem.type}`} style={{ position: 'static' }}>
+              {currentItem.type === 'found' ? 'Found' : 'Lost'}
+            </span>
+            {currentItem.location && (
+              <span className="detail-meta-loc">
+                <MapPin size={11} />{currentItem.location.replace(/-/g, ' ')}
+              </span>
+            )}
+            <span className="detail-meta-time">
+              <Clock size={11} />{timeAgo(currentItem.createdAt)}
+            </span>
+          </div>
+
           <div className="detail-cat-row">
             <span className="detail-cat-icon">{catIcon}</span>
             <span className="detail-cat-label">{catLabel}</span>
           </div>
 
-          {/* Title */}
           <h2 className="detail-title">{currentItem.title}</h2>
 
-          {/* Description */}
           {desc && <p className="detail-desc">{desc}</p>}
 
-          {/* Tags */}
           {tags.length > 0 && (
             <div className="detail-tags">
               {tags.map((t, i) => <span key={i} className="tag">{t}</span>)}
             </div>
           )}
 
-          {/* Suspicious warning */}
-          {(currentItem.reportCount >= 3) && (
+          {currentItem.reportCount >= 3 && (
             <div className="report-banner">
               <Flag size={13} style={{ flexShrink: 0, marginTop: 1 }} />
               <span>This post has been flagged by multiple users as suspicious. Proceed with caution.</span>
             </div>
           )}
 
-          {/* Matches */}
           {matches.length > 0 && history.length === 0 && (
             <div className="detail-matches">
               <div className="matches-label">Possible matches</div>
@@ -232,7 +237,6 @@ export default function DetailPopup({ item, onClose }) {
             </div>
           )}
 
-          {/* CTA */}
           <div className="detail-cta">
             <button className="btn-notify" onClick={onInterest}>
               <Mail size={14} />

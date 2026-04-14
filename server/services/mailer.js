@@ -1,4 +1,3 @@
-// server/services/mailer.js
 const nodemailer = require('nodemailer');
 
 const transport = nodemailer.createTransport({
@@ -9,18 +8,17 @@ const transport = nodemailer.createTransport({
     user: process.env.BREVO_SMTP_USER,
     pass: process.env.BREVO_SMTP_PASS,
   },
-  tls: { rejectUnauthorized: false },
 });
 
-// Verify SMTP connection on startup (non-blocking)
-transport.verify().then(() => {
-  console.log('SMTP connection verified — mailer ready');
+const smtpReady = transport.verify().then(() => {
+  console.log('SMTP connection verified - mailer ready');
 }).catch(err => {
   console.error('SMTP connection FAILED:', err.message, '| Check BREVO_SMTP_USER and BREVO_SMTP_PASS env vars');
+  throw err;
 });
 
-// FROM must be a verified sender in your Brevo account; set MAIL_FROM in .env
 const FROM = process.env.MAIL_FROM || `CampusFinder <${process.env.BREVO_SMTP_USER || 'noreply@campusfinder.app'}>`;
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -32,27 +30,42 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
+async function sendEmail({ to, subject, html, replyTo }) {
+  if (!process.env.BREVO_SMTP_USER || !process.env.BREVO_SMTP_PASS) {
+    throw new Error('Brevo SMTP credentials are missing');
+  }
+
+  await smtpReady;
+
+  const info = await transport.sendMail({
+    from: FROM,
+    to,
+    subject,
+    html,
+    ...(replyTo ? { replyTo } : {}),
+  });
+
+  console.log(`Mail queued: ${subject} -> ${to} (${info.messageId})`);
+  return info;
+}
+
 async function sendManageEmail({ to, name, title, manageToken }) {
-  const manageUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/manage/${manageToken}`;
+  const manageUrl = `${CLIENT_URL}/manage/${manageToken}`;
   const safeName = escapeHtml(name || 'Campus member');
   const safeTitle = escapeHtml(title);
-  try {
-    await transport.sendMail({
-      from: FROM,
-      to,
-      subject: `Your CampusFinder post is live — "${title}"`,
-      html: `
-        <p>Hi ${safeName},</p>
-        <p>Your item <strong>"${safeTitle}"</strong> has been posted on CampusFinder.</p>
-        <p><strong>Manage link</strong> (edit / resolve / delete):<br>
-        <a href="${manageUrl}">${manageUrl}</a></p>
-        <p>This link is private — do not share it.</p>
-        <p>— CampusFinder</p>
-      `,
-    });
-  } catch (err) {
-    console.error('sendManageEmail failed:', err.message);
-  }
+
+  return sendEmail({
+    to,
+    subject: `Your CampusFinder post is live - "${title}"`,
+    html: `
+      <p>Hi ${safeName},</p>
+      <p>Your item <strong>"${safeTitle}"</strong> has been posted on CampusFinder.</p>
+      <p><strong>Manage link</strong> (edit / resolve / delete):<br>
+      <a href="${manageUrl}">${manageUrl}</a></p>
+      <p>This link is private - do not share it.</p>
+      <p>- CampusFinder</p>
+    `,
+  });
 }
 
 async function sendInterestEmail({ to, posterName, title, interestedGmail, interestedName, message }) {
@@ -61,43 +74,36 @@ async function sendInterestEmail({ to, posterName, title, interestedGmail, inter
   const safeGmail = escapeHtml(interestedGmail);
   const safeName = escapeHtml(interestedName || '');
   const safeMessage = escapeHtml(message);
-  try {
-    await transport.sendMail({
-      from: FROM,
-      to,
-      subject: `Someone is interested in your post — "${title}"`,
-      html: `
-        <p>Hi ${safePoster},</p>
-        <p>A campus member${safeName ? ` (<strong>${safeName}</strong>)` : ''} expressed interest in your post <strong>"${safeTitle}"</strong>.</p>
-        <p><strong>Their Gmail:</strong> ${safeGmail}</p>
-        ${safeMessage ? `<p><strong>Message:</strong> ${safeMessage}</p>` : ''}
-        <p>Reply directly to connect with them.</p>
-        <p>— CampusFinder</p>
-      `,
-    });
-  } catch (err) {
-    console.error('sendInterestEmail failed:', err.message);
-  }
+
+  return sendEmail({
+    to,
+    subject: `Someone is interested in your post - "${title}"`,
+    replyTo: interestedGmail,
+    html: `
+      <p>Hi ${safePoster},</p>
+      <p>A campus member${safeName ? ` (<strong>${safeName}</strong>)` : ''} expressed interest in your post <strong>"${safeTitle}"</strong>.</p>
+      <p><strong>Their Gmail:</strong> ${safeGmail}</p>
+      ${safeMessage ? `<p><strong>Message:</strong> ${safeMessage}</p>` : ''}
+      <p>Use reply to respond directly to them.</p>
+      <p>- CampusFinder</p>
+    `,
+  });
 }
 
 async function sendRemovalEmail({ to, name, title }) {
   const safeName = escapeHtml(name || 'Campus member');
   const safeTitle = escapeHtml(title);
-  try {
-    await transport.sendMail({
-      from: FROM,
-      to,
-      subject: `Your CampusFinder post has been removed — "${title}"`,
-      html: `
-        <p>Hi ${safeName},</p>
-        <p>Your post <strong>"${safeTitle}"</strong> has been removed from CampusFinder because it was flagged as suspicious by multiple users.</p>
-        <p>If you believe this was a mistake, please repost with clearer details.</p>
-        <p>— CampusFinder</p>
-      `,
-    });
-  } catch (err) {
-    console.error('sendRemovalEmail failed:', err.message);
-  }
+
+  return sendEmail({
+    to,
+    subject: `Your CampusFinder post has been removed - "${title}"`,
+    html: `
+      <p>Hi ${safeName},</p>
+      <p>Your post <strong>"${safeTitle}"</strong> has been removed from CampusFinder because it was flagged as suspicious by multiple users.</p>
+      <p>If you believe this was a mistake, please repost with clearer details.</p>
+      <p>- CampusFinder</p>
+    `,
+  });
 }
 
 module.exports = { sendManageEmail, sendInterestEmail, sendRemovalEmail };

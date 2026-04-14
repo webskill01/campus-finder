@@ -5,10 +5,8 @@ export default function Navbar() {
   const { user } = useAppState();
   const dispatch = useAppDispatch();
 
-  function logout() {
-    localStorage.removeItem('cf_token');
-    dispatch({ type: 'SET_USER', payload: null });
-    dispatch({ type: 'CLOSE_POPUP' });
+  function openLogoutConfirm() {
+    dispatch({ type: 'OPEN_POPUP', payload: { popup: 'logout' } });
   }
 
   function openProfile() {
@@ -31,7 +29,7 @@ export default function Navbar() {
               <User size={13} />
               <span className="avatar-roll">{displayName}</span>
             </button>
-            <button className="btn-logout" onClick={logout} aria-label="Logout" title="Logout">
+            <button className="btn-logout" onClick={openLogoutConfirm} aria-label="Logout" title="Logout">
               <LogOut size={15} />
             </button>
           </>

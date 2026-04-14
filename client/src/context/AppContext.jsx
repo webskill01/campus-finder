@@ -11,7 +11,7 @@ const initialState = {
   aiMode: false,
   aiFilters: null,
   user: null,
-  popup: null,      // null | 'login' | 'post' | 'detail' | 'interest'
+  popup: null,      // null | 'login' | 'post' | 'detail' | 'interest' | 'profile' | 'logout'
   activeItem: null,
 }
 
