@@ -6,9 +6,9 @@ function dobError(dob) {
   if (!dob) return 'Date of birth is required';
   const birth = new Date(dob);
   if (isNaN(birth.getTime())) return 'Invalid date of birth';
-  if (birth > new Date()) return 'Date of birth cannot be in the future';
+  if (birth > new Date()) return "Date of birth can't be in the future";
   const age = (Date.now() - birth.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
-  if (age < 14) return 'You must be at least 14 years old to use CampusFinder';
+  if (age < 14) return 'Must be at least 14 years old';
   return null;
 }
 
@@ -58,7 +58,7 @@ export default function LoginPopup() {
     if (!trimmed) { setError('Email is required'); return; }
     // Basic email format validation
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      setError('Please enter a valid email address');
+      setError('Enter a valid email address');
       return;
     }
 
@@ -69,7 +69,7 @@ export default function LoginPopup() {
       const { exists } = await checkEmail(lower);
       setStep(exists ? 'login' : 'signup');
     } catch (err) {
-      setError(err.message || 'Failed to check email. Please try again.');
+      setError(err.message || 'Something went wrong. Try again.');
     } finally {
       setLoading(false);
     }
@@ -89,7 +89,7 @@ export default function LoginPopup() {
       dispatch({ type: 'CLOSE_POPUP' });
     } catch (err) {
       if (err.status === 401) {
-        setError('Roll number does not match our records');
+        setError("Roll number doesn't match");
       } else {
         setError(err.message || 'Login failed');
       }
@@ -104,7 +104,7 @@ export default function LoginPopup() {
 
     const trimmedRoll = rollNo.trim();
     if (!trimmedRoll || trimmedRoll.length < 2 || trimmedRoll.length > 20) {
-      setError('Roll number must be between 2 and 20 characters');
+      setError('Roll number must be 2–20 characters');
       return;
     }
     if (!name.trim()) { setError('Full name is required'); return; }
@@ -133,7 +133,7 @@ export default function LoginPopup() {
     return (
       <form onSubmit={handleEmailSubmit}>
         <div className="popup-title">Sign in to CampusFinder</div>
-        <div className="popup-subtitle">Enter your college email to continue</div>
+        <div className="popup-subtitle">Enter your college email</div>
         <div className="form-field" style={{ animationDelay: '0ms' }}>
           <label className="form-label">College Email</label>
           <input
@@ -148,7 +148,7 @@ export default function LoginPopup() {
         </div>
         {error && <div className="text-red" style={{ fontSize: 12, marginBottom: 10 }}>{error}</div>}
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? 'Checking…' : 'Continue →'}
+          {loading ? 'Checking…' : 'Continue'}
         </button>
       </form>
     );
@@ -159,7 +159,7 @@ export default function LoginPopup() {
       <form onSubmit={handleLoginSubmit}>
         <button type="button" style={backBtnStyle} onClick={goBack}>← Back</button>
         <div className="popup-title">Welcome back!</div>
-        <div className="popup-subtitle">Enter your roll number to verify</div>
+        <div className="popup-subtitle">Enter your roll number</div>
         <div className="email-chip" style={emailChipStyle}>{email}</div>
         <div className="form-field" style={{ animationDelay: '0ms' }}>
           <label className="form-label">Roll Number</label>
@@ -174,7 +174,7 @@ export default function LoginPopup() {
         </div>
         {error && <div className="text-red" style={{ fontSize: 12, marginBottom: 10 }}>{error}</div>}
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? 'Verifying…' : 'Sign In →'}
+          {loading ? 'Verifying…' : 'Sign in'}
         </button>
       </form>
     );
@@ -184,8 +184,8 @@ export default function LoginPopup() {
   return (
     <form onSubmit={handleSignupSubmit}>
       <button type="button" style={backBtnStyle} onClick={goBack}>← Back</button>
-      <div className="popup-title">Create your account</div>
-      <div className="popup-subtitle">Fill in your details to get started</div>
+      <div className="popup-title">Create account</div>
+      <div className="popup-subtitle">Just a few details to get started</div>
       <div className="email-chip" style={emailChipStyle}>{email}</div>
       <div className="form-field" style={{ animationDelay: '0ms' }}>
         <label className="form-label">Roll Number</label>
@@ -223,7 +223,7 @@ export default function LoginPopup() {
       </div>
       {error && <div className="text-red" style={{ fontSize: 12, marginBottom: 10 }}>{error}</div>}
       <button className="btn-primary" type="submit" disabled={loading}>
-        {loading ? 'Creating account…' : 'Create Account →'}
+        {loading ? 'Creating account…' : 'Create account'}
       </button>
     </form>
   );

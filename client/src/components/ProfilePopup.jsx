@@ -51,8 +51,8 @@ export default function ProfilePopup({ onClose }) {
 
   return (
     <form onSubmit={submit}>
-      <div className="popup-title">Edit Profile</div>
-      <div className="popup-subtitle">Changes take effect immediately across all your posts.</div>
+      <div className="popup-title">Edit profile</div>
+      <div className="popup-subtitle">Updates apply to all your posts immediately.</div>
       <div className="form-field" style={{ animationDelay: '0ms' }}>
         <label className="form-label">Full Name</label>
         <input className="form-input" type="text" value={form.name} onChange={set('name')}
@@ -68,7 +68,7 @@ export default function ProfilePopup({ onClose }) {
       </div>
       {error && <div className="text-red" style={{ fontSize: 12, marginBottom: 10 }}>{error}</div>}
       <button className="btn-primary" type="submit" disabled={loading}>
-        {loading ? 'Saving…' : 'Save Changes'}
+        {loading ? 'Saving…' : 'Save'}
       </button>
     </form>
   );

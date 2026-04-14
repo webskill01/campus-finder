@@ -32,11 +32,11 @@ export default function PostPopup({ onClose }) {
     sevenDaysAgo.setHours(0, 0, 0, 0);
 
     if (selectedDate > todayEnd) {
-      setError('Item date cannot be in the future.');
+      setError("Date can't be in the future");
       return;
     }
     if (selectedDate < sevenDaysAgo) {
-      setError('Item date cannot be more than 7 days in the past.');
+      setError("Date can't be more than 7 days ago");
       return;
     }
 
@@ -105,12 +105,12 @@ export default function PostPopup({ onClose }) {
         <div className="post-result-title">
           {result?.topMatches?.length
             ? `${result.topMatches.length} possible match${result.topMatches.length > 1 ? 'es' : ''} found!`
-            : 'Posted successfully'}
+            : 'Posted!'}
         </div>
         <div className="post-result-sub">
           {result?.topMatches?.length
-            ? (postMeta?.mailSent ? 'Check your Gmail for the manage link to view matches.' : 'Use the manage link below to view your post and matches.')
-            : (postMeta?.mailSent ? "No matches yet - you'll be notified if someone matches." : 'No matches yet. Email delivery failed, so keep the manage link below.')}
+            ? (postMeta?.mailSent ? 'Manage link sent to your email.' : 'Use the manage link below to view your post and matches.')
+            : (postMeta?.mailSent ? "No matches yet. You'll get an email if one appears." : 'Email failed — save this manage link.')}
         </div>
         {!postMeta?.mailSent && postMeta?.manageUrl && (
           <div style={{ marginTop: 12, fontSize: 12, color: 'var(--text-dim)', lineHeight: 1.5, wordBreak: 'break-word' }}>
@@ -125,8 +125,8 @@ export default function PostPopup({ onClose }) {
 
   return (
     <form onSubmit={submit}>
-      <div className="popup-title">Report an item</div>
-      <div className="popup-subtitle">Fill in what you know - AI will enrich it automatically.</div>
+      <div className="popup-title">Report item</div>
+      <div className="popup-subtitle">Describe what you found or lost.</div>
       <div className="type-toggle">
         <button type="button" className={`toggle-btn toggle-found${type === 'found' ? ' active' : ''}`} onClick={() => setType('found')}><Check size={13} strokeWidth={2.5} /> Found Something</button>
         <button type="button" className={`toggle-btn toggle-lost${type === 'lost' ? ' active' : ''}`} onClick={() => setType('lost')}><HelpCircle size={13} strokeWidth={2.5} /> Lost Something</button>
@@ -161,7 +161,7 @@ export default function PostPopup({ onClose }) {
       <div className="form-field"><label className="form-label">Description</label><textarea className="form-textarea" placeholder="Describe the item in detail - colour, brand, distinguishing marks..." value={form.description} onChange={set('description')} required /></div>
       <Upload onResult={setUpload} />
       {error && <div className="text-red" style={{ fontSize: 12, marginTop: 10, marginBottom: 4 }}>{error}</div>}
-      <button className="btn-primary" style={{ marginTop: 16 }} type="submit">Post Item -&gt;</button>
+      <button className="btn-primary" style={{ marginTop: 16 }} type="submit">Post item</button>
     </form>
   );
 }

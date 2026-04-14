@@ -33,7 +33,6 @@ export default function Upload({ onResult }) {
     setStatus('scanning');
     try {
       const img = new Image();
-      img.crossOrigin = 'anonymous';
       img.src = url;
       await new Promise(res => { img.onload = res; });
 
@@ -67,7 +66,7 @@ export default function Upload({ onResult }) {
       {!preview && (
         <div className="upload-zone" onClick={() => inputRef.current?.click()} style={{ cursor: 'pointer' }}>
           <ImagePlus size={28} strokeWidth={1.5} />
-          Add a photo (optional)
+          Add photo
           <input ref={inputRef} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
         </div>
       )}

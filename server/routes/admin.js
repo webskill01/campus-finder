@@ -30,7 +30,7 @@ router.post('/login', (req, res) => {
   }
   res.cookie('adminToken', makeAdminSession(process.env.ADMIN_PASSWORD), {
     httpOnly: true,
-    sameSite: 'strict',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     maxAge: 24 * 60 * 60 * 1000,
     secure: process.env.NODE_ENV === 'production'
   });
@@ -80,6 +80,10 @@ router.delete('/items/:id', adminAuth, async (req, res) => {
     }
 
     await Item.findByIdAndDelete(req.params.id);
+    await Item.updateMany(
+      { 'topMatches.itemId': item._id },
+      { $pull: { topMatches: { itemId: item._id } } }
+    );
     res.json({ message: 'Deleted' });
   } catch (err) {
     console.error('Admin delete error:', err.message);

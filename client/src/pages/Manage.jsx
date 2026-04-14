@@ -3,18 +3,22 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { MapPin, Calendar, Pencil, CheckCircle2, Trash2 } from 'lucide-react';
 import { updateItem, resolveItem, deleteItem, getItemByManageToken } from '../api/api';
 import { timeAgo } from '../hooks/useTimeAgo';
+import { useAppState } from '../context/AppContext';
+import Upload from '../components/Upload';
 
-const LOCATIONS = ['library','canteen','block-a','block-b','block-c','parking','hostel','ground','admin-block','other'];
+const LOCATION_SUGGESTIONS = ['Library','Canteen','Block A','Block B','Block C','Parking','Hostel','Ground','Admin Block','Main Gate','Sports Complex','Auditorium'];
 
 export default function Manage() {
   const { token } = useParams();
   const navigate   = useNavigate();
+  const { user } = useAppState();
   const [item, setItem]     = useState(null);
   const [error, setError]   = useState('');
   const [mode, setMode]     = useState('view'); // 'view'|'edit'|'confirm-resolve'|'confirm-delete'
   const [form, setForm]     = useState({});
   const [saving, setSaving] = useState(false);
   const [msg, setMsg]       = useState('');
+  const [upload, setUpload] = useState(null); // { file, dominantColor } | null
 
   useEffect(() => {
     getItemByManageToken(token)
@@ -22,14 +26,14 @@ export default function Manage() {
         setItem(fetched);
         setForm({ title: fetched.title, description: fetched.description, location: fetched.location });
       })
-      .catch(() => setError('Invalid or expired manage link.'));
+      .catch(() => setError('Invalid or expired link.'));
   }, [token]);
 
   async function save() {
     setSaving(true);
     try {
-      const updated = await updateItem(item._id, form, token);
-      setItem(updated); setMode('view'); setMsg('Saved!');
+      const updated = await updateItem(item._id, form, token, upload?.file || null, upload?.dominantColor || null);
+      setItem(updated); setMode('view'); setMsg('Saved!'); setUpload(null);
     } catch (e) { setMsg(e.message); }
     finally { setSaving(false); }
   }
@@ -37,8 +41,8 @@ export default function Manage() {
   async function resolve() {
     try {
       await resolveItem(item._id, token);
-      setItem(i => ({ ...i, status: 'resolved' })); setMode('view'); setMsg('Marked as resolved ✓');
-    } catch (e) { setMsg(e.message || 'Failed to resolve. Try again.'); }
+      setItem(i => ({ ...i, status: 'resolved' })); setMode('view'); setMsg('Marked as resolved');
+    } catch (e) { setMsg(e.message || "Couldn't resolve. Try again."); }
   }
 
   async function remove() {
@@ -65,10 +69,23 @@ export default function Manage() {
     </div>
   );
 
+  if (user && item && user.gmail !== item.posterGmail) return (
+    <div className="manage-page">
+      <div className="error-card">
+        <div style={{ fontSize: 32, marginBottom: 12 }}>🔒</div>
+        <div style={{ fontWeight: 700, marginBottom: 8 }}>Access denied</div>
+        <div style={{ color: 'var(--text-dim)', fontSize: 13, marginBottom: 16 }}>
+          This manage link belongs to a different account.
+        </div>
+        <a href="/" className="btn-primary" style={{ display: 'block', textAlign: 'center' }}>← Go home</a>
+      </div>
+    </div>
+  );
+
   return (
     <div className="manage-page">
       <div className="manage-header">
-        <div className="manage-title">Manage your post</div>
+        <div className="manage-title">Manage post</div>
         <div className="text-dim" style={{ fontSize: 12 }}>
           Posted {timeAgo(item.createdAt)} · Status:{' '}
           <strong style={{ color: item.status === 'active' ? 'var(--green)' : 'var(--gray)' }}>{item.status}</strong>
@@ -100,8 +117,8 @@ export default function Manage() {
           </div>
           {item.status === 'active' && (
             <div className="manage-actions">
-              <button className="btn-secondary" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6}} onClick={() => setMode('edit')}><Pencil size={13}/> Edit post</button>
-              <button className="btn-secondary" style={{ borderColor:'var(--green)',color:'var(--green)',display:'flex',alignItems:'center',justifyContent:'center',gap:6 }} onClick={() => setMode('confirm-resolve')}><CheckCircle2 size={13}/> Mark as resolved</button>
+              <button className="btn-secondary" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6}} onClick={() => setMode('edit')}><Pencil size={13}/> Edit</button>
+              <button className="btn-secondary" style={{ borderColor:'var(--green)',color:'var(--green)',display:'flex',alignItems:'center',justifyContent:'center',gap:6 }} onClick={() => setMode('confirm-resolve')}><CheckCircle2 size={13}/> Mark resolved</button>
               <button className="btn-danger" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6}} onClick={() => setMode('confirm-delete')}><Trash2 size={13}/> Delete post</button>
             </div>
           )}
@@ -113,12 +130,29 @@ export default function Manage() {
           <div className="form-field"><label className="form-label">Title</label><input className="form-input" value={form.title} onChange={e => setForm(f=>({...f,title:e.target.value}))} /></div>
           <div className="form-field">
             <label className="form-label">Location</label>
-            <select className="form-select form-input" value={form.location} onChange={e => setForm(f=>({...f,location:e.target.value}))}>
-              {LOCATIONS.map(l => <option key={l} value={l}>{l.replace(/-/g,' ')}</option>)}
-            </select>
+            <input
+              className="form-input"
+              list="manage-location-suggestions"
+              placeholder="e.g. Near library, Block B corridor..."
+              value={form.location}
+              onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
+            />
+            <datalist id="manage-location-suggestions">
+              {LOCATION_SUGGESTIONS.map(l => <option key={l} value={l} />)}
+            </datalist>
           </div>
           <div className="form-field"><label className="form-label">Description</label><textarea className="form-textarea" value={form.description} onChange={e => setForm(f=>({...f,description:e.target.value}))} /></div>
-          <button className="btn-primary" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</button>
+          <div className="form-field">
+            <label className="form-label">Photo</label>
+            {item.image?.url && !upload && (
+              <div style={{ borderRadius: 'var(--r-sm)', overflow: 'hidden', marginBottom: 8, border: '1.5px solid var(--line)' }}>
+                <img src={item.image.url} alt="Current" style={{ width: '100%', maxHeight: 160, objectFit: 'cover' }} />
+              </div>
+            )}
+            <Upload onResult={setUpload} />
+            {upload && <div style={{ fontSize: 11, color: 'var(--gray)', marginTop: 4 }}>New photo selected — saves on Submit</div>}
+          </div>
+          <button className="btn-primary" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
           <button className="btn-secondary" onClick={() => setMode('view')}>Cancel</button>
         </>
       )}
@@ -127,8 +161,8 @@ export default function Manage() {
         <div style={{ textAlign:'center',padding:'20px 0' }}>
           <div style={{ marginBottom:12,display:'flex',justifyContent:'center' }}><CheckCircle2 size={40} style={{color:'var(--green)'}}/></div>
           <div style={{ fontWeight:700,marginBottom:8 }}>Mark as resolved?</div>
-          <div style={{ fontSize:13,color:'var(--text-dim)',marginBottom:20 }}>This will remove it from active listings.</div>
-          <button className="btn-primary" style={{ background:'var(--green)',borderColor:'var(--green)' }} onClick={resolve}>Yes, mark resolved</button>
+          <div style={{ fontSize:13,color:'var(--text-dim)',marginBottom:20 }}>It'll be removed from active listings.</div>
+          <button className="btn-primary" style={{ background:'var(--green)',borderColor:'var(--green)' }} onClick={resolve}>Mark resolved</button>
           <button className="btn-secondary" onClick={() => setMode('view')}>Cancel</button>
         </div>
       )}
@@ -137,8 +171,8 @@ export default function Manage() {
         <div style={{ textAlign:'center',padding:'20px 0' }}>
           <div style={{ marginBottom:12,display:'flex',justifyContent:'center' }}><Trash2 size={40} style={{color:'var(--red)'}}/></div>
           <div style={{ fontWeight:700,marginBottom:8 }}>Delete this post?</div>
-          <div style={{ fontSize:13,color:'var(--text-dim)',marginBottom:20 }}>This cannot be undone. The image will also be deleted.</div>
-          <button className="btn-danger" onClick={remove}>Yes, delete permanently</button>
+          <div style={{ fontSize:13,color:'var(--text-dim)',marginBottom:20 }}>This can't be undone.</div>
+          <button className="btn-danger" onClick={remove}>Delete permanently</button>
           <button className="btn-secondary" onClick={() => setMode('view')}>Cancel</button>
         </div>
       )}

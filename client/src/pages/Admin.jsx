@@ -19,18 +19,6 @@ export default function Admin() {
     } catch { setError('Wrong password'); }
   }
 
-  async function loadData() {
-    try {
-      const [itemData, statData] = await Promise.all([
-        adminGetItems({ page }),
-        adminGetStats()
-      ]);
-      setItems(itemData.items ?? []);
-      setTotal(itemData.total ?? 0);
-      setStats(statData);
-    } catch { /* stay on page */ }
-  }
-
   async function del(id) {
     if (!window.confirm('Delete this item permanently?')) return;
     try {
@@ -44,7 +32,9 @@ export default function Admin() {
     adminGetItems({ page }).then(itemData => {
       setItems(itemData.items ?? []);
       setTotal(itemData.total ?? 0);
-    }).catch(() => {});
+    }).catch((err) => {
+      if (err.status === 401) { setAuthed(false); setError('Session expired. Please log in again.'); }
+    });
     adminGetStats().then(setStats).catch(() => {});
   }, [page, authed]);
 

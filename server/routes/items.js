@@ -360,7 +360,7 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
 });
 
 // PATCH /api/items/:id — update item (manage token required)
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', upload.single('image'), async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ error: 'Invalid item ID' });
@@ -385,6 +385,28 @@ router.patch('/:id', async (req, res) => {
         else if (field === 'description') updates[field] = req.body[field].trim().slice(0, 500);
         else updates[field] = req.body[field];
       }
+    }
+
+    // Handle image replacement
+    if (req.file) {
+      // Delete old Cloudinary image if exists
+      if (item.image && item.image.publicId) {
+        try {
+          await cloudinary.uploader.destroy(item.image.publicId);
+        } catch (cloudErr) {
+          console.error('Cloudinary delete (update) failed:', cloudErr.message);
+        }
+      }
+      // Upload new image
+      const uploadResult = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: 'campusfinder', resource_type: 'image' },
+          (error, result) => { if (error) reject(error); else resolve(result); }
+        );
+        stream.end(req.file.buffer);
+      });
+      updates.image = { url: uploadResult.secure_url, publicId: uploadResult.public_id };
+      updates.dominantColor = req.body.dominantColor || item.dominantColor || null;
     }
 
     if (Object.keys(updates).length === 0) {
@@ -469,6 +491,10 @@ router.delete('/:id', async (req, res) => {
     }
 
     await Item.findByIdAndDelete(req.params.id);
+    await Item.updateMany(
+      { 'topMatches.itemId': item._id },
+      { $pull: { topMatches: { itemId: item._id } } }
+    );
 
     res.json({ message: 'Item deleted' });
   } catch (err) {

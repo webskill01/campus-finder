@@ -16,7 +16,7 @@ export default function LogoutConfirmPopup({ onClose }) {
         <LogOut size={20} />
       </div>
       <div className="popup-title">Log out?</div>
-      <div className="popup-subtitle">You will need to log in again to post, report, or contact a poster.</div>
+      <div className="popup-subtitle">You'll need to sign in again to post or contact someone.</div>
       <button className="btn-danger" type="button" onClick={handleLogout}>Log out</button>
       <button className="btn-secondary" type="button" onClick={onClose}>Cancel</button>
     </div>

@@ -26,7 +26,7 @@ export default function InterestPopup({ item, onClose }) {
     <div className="post-result">
       <div className="post-result-icon"><Mail size={44} style={{ color: 'var(--green)' }} /></div>
       <div className="post-result-title">Message sent!</div>
-      <div className="post-result-sub">The poster will receive your contact details via email.</div>
+      <div className="post-result-sub">The poster will be notified with your contact.</div>
       <button className="btn-primary" style={{ marginTop: 20 }} onClick={onClose}>Done</button>
     </div>
   );
@@ -34,7 +34,7 @@ export default function InterestPopup({ item, onClose }) {
   return (
     <form onSubmit={submit}>
       <div className="popup-title" style={{ display:'flex', alignItems:'center', gap:8 }}><MessageCircle size={18} style={{ color:'var(--accent)' }} />Express interest</div>
-      <div className="popup-subtitle">Your contact will be shared with the poster privately</div>
+      <div className="popup-subtitle">Your contact details go directly to the poster.</div>
       <div className="form-field">
         <label className="form-label">Your message (optional)</label>
         <textarea className="form-textarea" placeholder="e.g. I think this is mine — it has a red sticker on the back…" value={message} onChange={e => setMessage(e.target.value)} />
@@ -45,7 +45,7 @@ export default function InterestPopup({ item, onClose }) {
         <div className="contact-card-roll">Roll No. {user?.rollNo}</div>
       </div>
       {error && <div className="text-red" style={{ fontSize: 12, marginBottom: 10 }}>{error}</div>}
-      <button className="btn-primary" type="submit" disabled={loading}>{loading ? 'Sending…' : 'Send to poster →'}</button>
+      <button className="btn-primary" type="submit" disabled={loading}>{loading ? 'Sending…' : 'Send'}</button>
       <button className="btn-secondary" type="button" onClick={onClose}>Cancel</button>
     </form>
   );

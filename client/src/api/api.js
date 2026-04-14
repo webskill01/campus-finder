@@ -67,12 +67,23 @@ export async function resolveItem(id, manageToken) {
   })
 }
 
-export async function updateItem(id, data, manageToken) {
+export async function updateItem(id, data, manageToken, imageFile, dominantColor) {
+  if (imageFile) {
+    const fd = new FormData();
+    Object.entries(data).forEach(([k, v]) => { if (v !== undefined) fd.append(k, v); });
+    fd.append('image', imageFile);
+    if (dominantColor) fd.append('dominantColor', dominantColor);
+    return request(`${BASE}/items/${id}`, {
+      method: 'PATCH',
+      headers: { 'x-manage-token': manageToken },
+      body: fd,
+    });
+  }
   return request(`${BASE}/items/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', 'x-manage-token': manageToken },
     body: JSON.stringify(data),
-  })
+  });
 }
 
 export async function deleteItem(id, manageToken) {

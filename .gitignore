@@ -5,6 +5,7 @@ node_modules/
 .superpowers/
 docs/
 PLAN.md
+PROJECT_REPORT_DATA.md
 
 # Frontend build output (Vercel builds from source)
 client/dist/

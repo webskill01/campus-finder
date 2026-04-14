@@ -189,7 +189,7 @@ export default function DetailPopup({ item, onClose }) {
                   <div className="report-confirm-bar">
                     <div className="report-confirm-head">
                       <Flag size={12} />
-                      <span>Flag this post?</span>
+                      <span>Flag post?</span>
                     </div>
                     <div className="report-confirm-actions">
                       <button className="rpt-cancel" onClick={() => setReportConfirm(false)}>Cancel</button>
@@ -221,7 +221,7 @@ export default function DetailPopup({ item, onClose }) {
           {currentItem.reportCount >= 3 && (
             <div className="report-banner">
               <Flag size={13} style={{ flexShrink: 0, marginTop: 1 }} />
-              <span>This post has been flagged by multiple users as suspicious. Proceed with caution.</span>
+              <span>Flagged by multiple users. Proceed with caution.</span>
             </div>
           )}
 
@@ -245,7 +245,7 @@ export default function DetailPopup({ item, onClose }) {
           <div className="detail-cta">
             <button className="btn-notify" onClick={onInterest}>
               <Mail size={14} />
-              Notify the poster
+              Contact poster
             </button>
           </div>
         </div>
