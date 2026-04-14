@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { CheckCircle2, Target, Check, Loader2, HelpCircle } from 'lucide-react';
 import { postItem, getItem } from '../api/api';
+import { useAppDispatch } from '../context/AppContext';
 import Upload from './Upload';
 
 const CATEGORIES = ['phone','keys','bag','documents','electronics','accessories','clothing','wallet','bottle','glasses','headphones','id-card','stationery','other'];
 const LOCATION_SUGGESTIONS = ['Library','Canteen','Block A','Block B','Block C','Parking','Hostel','Ground','Admin Block','Main Gate','Sports Complex','Auditorium'];
 
 export default function PostPopup({ onClose }) {
+  const dispatch = useAppDispatch();
   const [type, setType] = useState('found');
   const [form, setForm] = useState({ title: '', category: 'phone', location: '', description: '', itemDate: new Date().toISOString().split('T')[0] });
   const [upload, setUpload] = useState(null);
@@ -57,6 +59,7 @@ export default function PostPopup({ onClose }) {
         mailError: response?.mailError || '',
         manageUrl: response?.manageUrl || '',
       });
+      dispatch({ type: 'REFRESH_ITEMS' });
 
       setState('done');
 

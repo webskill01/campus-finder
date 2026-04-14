@@ -23,7 +23,7 @@ function usePageSize() {
 }
 
 export default function Home() {
-  const { tab, page, category, sort, dateRange, query, user } = useAppState();
+  const { tab, page, category, sort, dateRange, query, user, refreshTick } = useAppState();
   const dispatch = useAppDispatch();
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
@@ -66,7 +66,7 @@ export default function Home() {
       }
     } catch { setItems([]); setTotal(0); }
     finally { setLoading(false); }
-  }, [tab, page, category, sort, dateRange, debouncedQ, pageSize, user]);
+  }, [tab, page, category, sort, dateRange, debouncedQ, pageSize, user, refreshTick]);
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => { dispatch({ type: 'SET_PAGE', payload: 1 }); }, [pageSize]);
@@ -128,7 +128,7 @@ export default function Home() {
 
         {loading && (
           <div className="items-grid">
-            {Array.from({ length: 6 }).map((_, i) => (
+            {Array.from({ length: pageSize }).map((_, i) => (
               <div key={i} className="skeleton">
                 <div className="skeleton-img" />
                 <div className="skeleton-body">

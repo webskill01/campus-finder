@@ -13,6 +13,7 @@ const initialState = {
   user: null,
   popup: null,      // null | 'login' | 'post' | 'detail' | 'interest' | 'profile' | 'logout'
   activeItem: null,
+  refreshTick: 0,
 }
 
 function reducer(state, action) {
@@ -37,6 +38,8 @@ function reducer(state, action) {
       return { ...state, popup: null, activeItem: null }
     case 'SET_ACTIVE_ITEM':
       return { ...state, activeItem: action.payload }
+    case 'REFRESH_ITEMS':
+      return { ...state, refreshTick: state.refreshTick + 1 }
     default:
       return state
   }

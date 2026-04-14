@@ -166,24 +166,6 @@ export default function DetailPopup({ item, onClose }) {
             </button>
           )}
 
-          <div className="detail-report-wrap">
-            {showReportBtn && !reportConfirm && (
-              <button className="report-btn" onClick={startReport} title="Report as suspicious">
-                <Flag size={13} />
-              </button>
-            )}
-            {showReportBtn && reportConfirm && (
-              <div className="report-confirm-bar">
-                <Flag size={12} />
-                <span>Flag this post?</span>
-                <button className="rpt-cancel" onClick={() => setReportConfirm(false)}>Cancel</button>
-                <button className="rpt-confirm" onClick={confirmReport} disabled={reportLoading}>
-                  {reportLoading ? '...' : 'Confirm'}
-                </button>
-              </div>
-            )}
-          </div>
-
           <div className="detail-meta-row">
             <span className={`type-pill type-${currentItem.type}`} style={{ position: 'static' }}>
               {currentItem.type === 'found' ? 'Found' : 'Lost'}
@@ -196,6 +178,29 @@ export default function DetailPopup({ item, onClose }) {
             <span className="detail-meta-time">
               <Clock size={11} />{timeAgo(currentItem.createdAt)}
             </span>
+            {showReportBtn && (
+              <div className="detail-report-wrap">
+                {!reportConfirm && (
+                  <button className="report-btn" onClick={startReport} title="Report as suspicious">
+                    <Flag size={13} />
+                  </button>
+                )}
+                {reportConfirm && (
+                  <div className="report-confirm-bar">
+                    <div className="report-confirm-head">
+                      <Flag size={12} />
+                      <span>Flag this post?</span>
+                    </div>
+                    <div className="report-confirm-actions">
+                      <button className="rpt-cancel" onClick={() => setReportConfirm(false)}>Cancel</button>
+                      <button className="rpt-confirm" onClick={confirmReport} disabled={reportLoading}>
+                        {reportLoading ? '...' : 'Confirm'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="detail-cat-row">
