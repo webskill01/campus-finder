@@ -63,13 +63,13 @@ export default function CategoryButton() {
       >
         {activeLabel} <ChevronDown size={12} />
       </button>
+      {open && !desktop() && <div onClick={closePanel} style={{ position: 'fixed', inset: 0, zIndex: 199 }} />}
       {open && (
         <div
           className={`cat-panel${exiting ? ' exiting' : ''}`}
           onMouseEnter={() => desktop() && cancelClose()}
           onMouseLeave={() => desktop() && scheduleClose()}
         >
-          {!desktop() && <div onClick={closePanel} style={{ position: 'fixed', inset: 0, zIndex: 199 }} />}
           {CATEGORIES.map(c => (
             <button
               key={c.id}

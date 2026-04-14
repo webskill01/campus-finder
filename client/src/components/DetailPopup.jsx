@@ -49,11 +49,12 @@ export default function DetailPopup({ item, onClose }) {
   useEffect(() => {
     const pending = (currentItem.topMatches || []).filter(m => {
       const id = m.itemId?._id || m.itemId;
-      return m.score > 40 && !m.title && !fetchedRef.current.has(String(id));
+      return id && m.score > 40 && !m.title && !fetchedRef.current.has(String(id));
     });
     if (!pending.length) return;
     pending.forEach(m => {
       const id = m.itemId?._id || m.itemId;
+      if (!id) return;
       fetchedRef.current.add(String(id));
       getItem(id).then(fetched => {
         if (fetched) setMatchCache(c => ({
@@ -86,6 +87,7 @@ export default function DetailPopup({ item, onClose }) {
 
   async function handleMatchClick(match) {
     const id = match.itemId?._id || match.itemId;
+    if (!id) return;
     const next = await getItem(id).catch(() => null);
     if (!next) return;
     setHistory(h => [...h, currentItem]);
@@ -97,10 +99,14 @@ export default function DetailPopup({ item, onClose }) {
     setCurrentItem(history[history.length - 1]);
     setHistory(h => h.slice(0, -1));
     setLightbox(false);
+    setReportConfirm(false);
   }
 
-  async function handleReport() {
-    if (!reportConfirm) { setReportConfirm(true); return; }
+  function startReport() {
+    setReportConfirm(true);
+  }
+
+  async function confirmReport() {
     setReportLoading(true);
     try {
       const token = localStorage.getItem('cf_token');
@@ -108,10 +114,7 @@ export default function DetailPopup({ item, onClose }) {
       setReported(true);
       localStorage.setItem(`cf_reported_${currentItem._id}`, '1');
       setReportConfirm(false);
-      if (result.removed) {
-        onClose();
-        return;
-      }
+      if (result.removed) { onClose(); return; }
       if (result.reportCount >= 3) {
         setCurrentItem(c => ({ ...c, reportCount: result.reportCount }));
       }
@@ -167,16 +170,20 @@ export default function DetailPopup({ item, onClose }) {
             <span className="detail-meta-time">
               <Clock size={11} />{timeAgo(currentItem.createdAt)}
             </span>
-            {showReportBtn && (
-              <button
-                className="report-btn"
-                onClick={handleReport}
-                disabled={reportLoading}
-                title={reportConfirm ? 'Click again to confirm report' : 'Report as suspicious'}
-                style={{ marginLeft: 'auto', color: reportConfirm ? 'var(--red)' : undefined, opacity: reportConfirm ? 1 : undefined }}
-              >
+            {showReportBtn && !reportConfirm && (
+              <button className="report-btn" onClick={startReport} title="Report as suspicious">
                 <Flag size={13} />
               </button>
+            )}
+            {showReportBtn && reportConfirm && (
+              <div className="report-confirm-bar">
+                <Flag size={12} />
+                <span>Flag this post?</span>
+                <button className="rpt-cancel" onClick={() => setReportConfirm(false)}>Cancel</button>
+                <button className="rpt-confirm" onClick={confirmReport} disabled={reportLoading}>
+                  {reportLoading ? '…' : 'Confirm'}
+                </button>
+              </div>
             )}
           </div>
 

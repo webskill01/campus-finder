@@ -1,6 +1,6 @@
 import { useAppState, useAppDispatch } from '../context/AppContext';
 
-const SORT_OPTIONS = [{ id:'recent',label:'Recent' },{ id:'old',label:'Oldest' },{ id:'az',label:'A–Z' },{ id:'match',label:'Best Match' }];
+const SORT_OPTIONS = [{ id:'recent',label:'Recent' },{ id:'old',label:'Oldest' },{ id:'az',label:'A–Z' },{ id:'mine', label:'My Posts' }];
 const DATE_OPTIONS = [{ id:'all',label:'All Time' },{ id:'week',label:'This Week' },{ id:'today',label:'Today' }];
 
 export default function FilterPanel({ onClose, exiting = false, hover = false, onPanelEnter, onPanelLeave }) {

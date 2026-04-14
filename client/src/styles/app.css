@@ -6,22 +6,22 @@
 @layer tokens {
   :root {
     --bg: #000000;
-    --surface: #242424;
-    --surface2: #2d2d2d;
+    --surface: #272727;
+    --surface2: #333333;
     --mid: #000000;
     --accent: #ff9000;
     --accent-lo: rgba(255,144,0,0.12);
     --accent-md: rgba(255,144,0,0.22);
     --accent-glow: 0 0 24px -4px rgba(255,144,0,0.45);
-    --line: rgba(255,255,255,0.09);
-    --border: rgba(255,255,255,0.07);
-    --border2: rgba(255,255,255,0.12);
+    --line: rgba(255,255,255,0.13);
+    --border: rgba(255,255,255,0.11);
+    --border2: rgba(255,255,255,0.18);
     --shadow-hard: 0 2px 8px rgba(0,0,0,0.32);
     --shadow-deep: 0 4px 20px rgba(0,0,0,0.50);
     --shadow-press: 0 1px 3px rgba(0,0,0,0.20);
     --text: #f2f2f2;
-    --text-dim: #c8c8c8;
-    --gray: #aaaaaa;
+    --text-dim: #d4d4d4;
+    --gray: #b4b4b4;
     --green: #3ecf8e;
     --green-lo: rgba(62,207,142,0.10);
     --red: #f05252;
@@ -242,8 +242,8 @@
     color: var(--text-dim); cursor: default;
     box-shadow: var(--shadow-hard);
   }
-  .avatar-roll { font-size: 12px; color: var(--gray); font-weight: 600; letter-spacing: 0.1px; }
-  .navbar-logo { height: 32px; width: auto; object-fit: contain; display: block; }
+  .avatar-roll { font-size: 12px; color: #111; font-weight: 600; letter-spacing: 0.1px; }
+  .navbar-logo { height: 48px; width: auto; object-fit: contain; display: block; }
   .btn-logout {
     width: 32px; height: 32px; border-radius: var(--r-xs);
     background: transparent; border: 1.5px solid var(--line);
@@ -257,11 +257,11 @@
     all: unset; cursor: pointer;
     display: flex; align-items: center; gap: 6px;
     height: 34px; padding: 0 12px; border-radius: 20px;
-    background: var(--surface); border: 1px solid var(--line);
-    color: var(--text-dim); box-shadow: var(--shadow-hard);
+    background: var(--accent); border: 1px solid var(--accent);
+    color: #111; box-shadow: var(--shadow-hard);
     transition: border-color var(--dur-fast), background var(--dur-fast);
   }
-  .avatar-btn:hover { border-color: rgba(255,144,0,0.35); background: var(--accent-lo); }
+  .avatar-btn:hover { background: #e08000; border-color: #e08000; }
 
   /* Search row */
   .search-wrap { padding: 12px 16px 0; }
@@ -988,6 +988,26 @@
     opacity: 0.5;
   }
   .report-btn:hover { color: var(--red); opacity: 1; }
+  .report-confirm-bar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 7px;
+    background: var(--surface2); border: 1.5px solid rgba(240,82,82,0.35);
+    border-radius: var(--r-sm); padding: 6px 10px;
+    font-size: 11.5px; color: var(--text-dim); margin-left: auto;
+    animation: fade-in 150ms var(--ease-out) both;
+  }
+  .rpt-cancel {
+    padding: 3px 9px; border: 1.5px solid var(--line); border-radius: 20px;
+    font-size: 11px; color: var(--gray); background: transparent; cursor: pointer;
+    transition: border-color var(--dur-fast), color var(--dur-fast);
+  }
+  .rpt-cancel:hover { border-color: var(--gray); color: var(--text); }
+  .rpt-confirm {
+    padding: 3px 9px; border: 1.5px solid rgba(240,82,82,0.5); border-radius: 20px;
+    font-size: 11px; font-weight: 600; color: var(--red); background: var(--red-lo); cursor: pointer;
+    transition: background var(--dur-fast), border-color var(--dur-fast);
+  }
+  .rpt-confirm:hover { background: rgba(240,82,82,0.18); border-color: var(--red); }
+  .rpt-confirm:disabled { opacity: 0.5; cursor: default; }
   .report-banner {
     display: flex; align-items: flex-start; gap: 8px;
     background: rgba(255, 180, 0, 0.08); border: 1.5px solid rgba(255, 180, 0, 0.3);

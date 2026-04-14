@@ -8,7 +8,7 @@ const router = express.Router();
 const GMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 function dobError(dob) {
-  if (!dob) return null;
+  if (!dob) return 'Date of birth is required';
   const birth = new Date(dob);
   if (isNaN(birth.getTime())) return 'Invalid date of birth';
   const now = new Date();
@@ -26,13 +26,28 @@ function makeJwt(doc) {
   );
 }
 
-// POST /api/auth/verify — upsert token doc, return JWT
+// GET /api/auth/check — check if an email has an existing account
+router.get('/check', async (req, res) => {
+  try {
+    const { gmail } = req.query;
+    if (!gmail || !GMAIL_RE.test(gmail.trim().toLowerCase())) {
+      return res.status(400).json({ error: 'Valid email required' });
+    }
+    const exists = await Token.exists({ gmail: gmail.trim().toLowerCase() });
+    res.json({ exists: !!exists });
+  } catch (err) {
+    console.error('Auth check error:', err.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/auth/verify — login (email+rollNo) or signup (all 4 fields)
 router.post('/verify', async (req, res) => {
   try {
     const { gmail, rollNo, dob, name } = req.body;
 
     if (!gmail || !rollNo) {
-      return res.status(400).json({ error: 'gmail and rollNo are required' });
+      return res.status(400).json({ error: 'Email and roll number are required' });
     }
     if (!GMAIL_RE.test(gmail)) {
       return res.status(400).json({ error: 'Invalid email format' });
@@ -40,30 +55,49 @@ router.post('/verify', async (req, res) => {
 
     const cleanGmail = gmail.trim().toLowerCase();
     const cleanRollNo = rollNo.trim();
-    const cleanName = (name || '').trim().slice(0, 60);
 
     if (cleanRollNo.length < 2 || cleanRollNo.length > 20) {
       return res.status(400).json({ error: 'Roll number must be 2–20 characters' });
     }
 
-    const dobErr = dobError(dob);
-    if (dobErr) return res.status(400).json({ error: dobErr });
+    // Check if account already exists
+    const existing = await Token.findOne({ gmail: cleanGmail });
 
-    const tokenDoc = await Token.findOneAndUpdate(
-      { gmail: cleanGmail },
-      {
-        gmail: cleanGmail,
-        rollNo: cleanRollNo,
-        name: cleanName,
-        dob: dob || undefined,
-        expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-      },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
+    if (existing) {
+      // LOGIN path: verify rollNo matches (case-insensitive)
+      if (existing.rollNo.toLowerCase() !== cleanRollNo.toLowerCase()) {
+        return res.status(401).json({ error: 'Roll number does not match our records' });
+      }
+      // Refresh token expiry and return JWT
+      existing.expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+      await existing.save();
+      const token = makeJwt(existing);
+      return res.json({ token, gmail: existing.gmail, rollNo: existing.rollNo, name: existing.name });
+    }
+
+    // SIGNUP path: require name and dob for new accounts
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Full name is required to create an account', needsSignup: true });
+    }
+    const dobErr = dobError(dob);
+    if (dobErr) return res.status(400).json({ error: dobErr, needsSignup: true });
+
+    const cleanName = name.trim().slice(0, 60);
+
+    const tokenDoc = await Token.create({
+      gmail: cleanGmail,
+      rollNo: cleanRollNo,
+      name: cleanName,
+      dob,
+      expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+    });
 
     const token = makeJwt(tokenDoc);
     res.json({ token, gmail: tokenDoc.gmail, rollNo: tokenDoc.rollNo, name: tokenDoc.name });
   } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).json({ error: 'An account with this email already exists' });
+    }
     console.error('Auth verify error:', err.message);
     res.status(500).json({ error: 'Server error' });
   }

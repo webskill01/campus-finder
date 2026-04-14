@@ -15,6 +15,10 @@ async function request(url, opts = {}) {
   return res.json()
 }
 
+export async function checkEmail(gmail) {
+  return request(`${BASE}/auth/check?gmail=${encodeURIComponent(gmail)}`);
+}
+
 export async function authVerify({ gmail, rollNo, dob, name }) {
   return request(`${BASE}/auth/verify`, {
     method: 'POST',

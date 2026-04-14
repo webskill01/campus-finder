@@ -23,7 +23,7 @@ function usePageSize() {
 }
 
 export default function Home() {
-  const { tab, page, category, sort, dateRange, query } = useAppState();
+  const { tab, page, category, sort, dateRange, query, user } = useAppState();
   const dispatch = useAppDispatch();
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
@@ -37,6 +37,13 @@ export default function Home() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    if (sort === 'mine') {
+      if (!user) {
+        dispatch({ type: 'OPEN_POPUP', payload: { popup: 'login' } });
+        setLoading(false);
+        return;
+      }
+    }
     try {
       let data;
       if (debouncedQ) {
@@ -44,13 +51,22 @@ export default function Home() {
         setItems(Array.isArray(data) ? data : data.items ?? []);
         setTotal(Array.isArray(data) ? data.length : data.total ?? 0);
       } else {
-        data = await getItems({ type: tab, category: category === 'all' ? undefined : category, sort, dateRange, page, limit: pageSize, status: 'active' });
+        data = await getItems({
+          type: tab,
+          category: category === 'all' ? undefined : category,
+          sort: sort === 'mine' ? 'recent' : sort,
+          dateRange: sort === 'mine' ? 'all' : dateRange,
+          page,
+          limit: pageSize,
+          status: 'active',
+          posterGmail: sort === 'mine' ? user.gmail : undefined,
+        });
         setItems(data.items ?? []);
         setTotal(data.total ?? 0);
       }
     } catch { setItems([]); setTotal(0); }
     finally { setLoading(false); }
-  }, [tab, page, category, sort, dateRange, debouncedQ, pageSize]);
+  }, [tab, page, category, sort, dateRange, debouncedQ, pageSize, user]);
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => { dispatch({ type: 'SET_PAGE', payload: 1 }); }, [pageSize]);
@@ -83,7 +99,9 @@ export default function Home() {
           <strong>{total} {tab} item{total !== 1 ? 's' : ''}</strong>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span>
-              {dateRange === 'today' ? 'Today' : dateRange === 'week' ? 'This week' : 'All time'} · Campus-wide
+              {sort === 'mine'
+                ? 'My Posts'
+                : dateRange === 'today' ? 'Today' : dateRange === 'week' ? 'This week' : 'All time'}
             </span>
             <button
               className={`filter-btn${hasFilters ? ' has-filters' : ''}`}

@@ -9,9 +9,18 @@ const transport = nodemailer.createTransport({
     user: process.env.BREVO_SMTP_USER,
     pass: process.env.BREVO_SMTP_PASS,
   },
+  tls: { rejectUnauthorized: false },
 });
 
-const FROM = process.env.MAIL_FROM || 'CampusFinder <noreply@campusfinder.app>';
+// Verify SMTP connection on startup (non-blocking)
+transport.verify().then(() => {
+  console.log('SMTP connection verified — mailer ready');
+}).catch(err => {
+  console.error('SMTP connection FAILED:', err.message, '| Check BREVO_SMTP_USER and BREVO_SMTP_PASS env vars');
+});
+
+// FROM must be a verified sender in your Brevo account; set MAIL_FROM in .env
+const FROM = process.env.MAIL_FROM || `CampusFinder <${process.env.BREVO_SMTP_USER || 'noreply@campusfinder.app'}>`;
 
 function escapeHtml(str) {
   if (!str) return '';

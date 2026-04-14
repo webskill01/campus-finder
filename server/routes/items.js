@@ -40,6 +40,7 @@ router.get('/', async (req, res) => {
     const filter = { status };
     if (type && ['lost', 'found'].includes(type)) filter.type = type;
     if (category && category !== 'all') filter.category = category;
+    if (req.query.posterGmail) filter.posterGmail = req.query.posterGmail.trim().toLowerCase();
 
     // Date range filter
     if (dateRange === 'today') {

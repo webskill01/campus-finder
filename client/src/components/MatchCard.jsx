@@ -8,6 +8,7 @@ export default function MatchCard({ match, onMatchClick, style }) {
   async function open() {
     if (onMatchClick) { onMatchClick(match); return; }
     const id = match.itemId?._id || match.itemId;
+    if (!id) return;
     const item = await getItem(id).catch(() => null);
     if (item) dispatch({ type: 'SET_ACTIVE_ITEM', payload: item });
   }
