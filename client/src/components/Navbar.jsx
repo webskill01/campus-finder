@@ -26,11 +26,11 @@ export default function Navbar() {
         {user ? (
           <>
             <button className="avatar-btn" onClick={openProfile} title="Edit profile">
-              <User size={13} />
+              <User size={15} />
               <span className="avatar-roll">{displayName}</span>
             </button>
             <button className="btn-logout" onClick={openLogoutConfirm} aria-label="Logout" title="Logout">
-              <LogOut size={15} />
+              <LogOut size={14} />
             </button>
           </>
         ) : (
