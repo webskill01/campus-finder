@@ -17,7 +17,7 @@ const smtpReady = transport.verify().then(() => {
   throw err;
 });
 
-const FROM = process.env.MAIL_FROM || `CampusFinder <${process.env.BREVO_SMTP_USER || 'noreply@campusfinder.app'}>`;
+const FROM = process.env.MAIL_FROM || `Find Hub <${process.env.BREVO_SMTP_USER || 'noreply@Find-Hub.app'}>`;
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 const MAIL_LOGO_URL = process.env.MAIL_LOGO_URL || `${CLIENT_URL}/logo.png`;
 
@@ -35,7 +35,7 @@ function wrapEmailHtml(content) {
   return `
     <div style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.6;">
       <div style="margin-bottom: 20px;">
-        <img src="${MAIL_LOGO_URL}" alt="CampusFinder" style="height: 44px; width: auto; display: block;" />
+        <img src="${MAIL_LOGO_URL}" alt="Find Hub" style="height: 44px; width: auto; display: block;" />
       </div>
       ${content}
     </div>
@@ -68,14 +68,14 @@ async function sendManageEmail({ to, name, title, manageToken }) {
 
   return sendEmail({
     to,
-    subject: `Your CampusFinder post is live - "${title}"`,
+    subject: `Your Find Hub post is live - "${title}"`,
     html: wrapEmailHtml(`
       <p>Hi ${safeName},</p>
-      <p>Your item <strong>"${safeTitle}"</strong> has been posted on CampusFinder.</p>
+      <p>Your item <strong>"${safeTitle}"</strong> has been posted on Find Hub.</p>
       <p><strong>Manage link</strong> (edit / resolve / delete):<br>
       <a href="${manageUrl}">${manageUrl}</a></p>
       <p>This link is private - do not share it.</p>
-      <p>- CampusFinder</p>
+      <p>- Find Hub</p>
     `),
   });
 }
@@ -97,7 +97,7 @@ async function sendInterestEmail({ to, posterName, title, interestedGmail, inter
       <p><strong>Their Gmail:</strong> ${safeGmail}</p>
       ${safeMessage ? `<p><strong>Message:</strong> ${safeMessage}</p>` : ''}
       <p>Use reply to respond directly to them.</p>
-      <p>- CampusFinder</p>
+      <p>- Find Hub</p>
     `),
   });
 }
@@ -108,12 +108,12 @@ async function sendRemovalEmail({ to, name, title }) {
 
   return sendEmail({
     to,
-    subject: `Your CampusFinder post has been removed - "${title}"`,
+    subject: `Your Find Hub post has been removed - "${title}"`,
     html: wrapEmailHtml(`
       <p>Hi ${safeName},</p>
-      <p>Your post <strong>"${safeTitle}"</strong> has been removed from CampusFinder because it was flagged as suspicious by multiple users.</p>
+      <p>Your post <strong>"${safeTitle}"</strong> has been removed from Find Hub because it was flagged as suspicious by multiple users.</p>
       <p>If you believe this was a mistake, please repost with clearer details.</p>
-      <p>- CampusFinder</p>
+      <p>- Find Hub</p>
     `),
   });
 }
