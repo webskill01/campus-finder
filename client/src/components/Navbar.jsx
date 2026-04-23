@@ -20,7 +20,7 @@ export default function Navbar() {
   return (
     <nav className="navbar">
       <div className="navbar-brand">
-        <img src="/logo.png" alt="CampusFinder" className="navbar-logo" />
+        <img src="/logo.png" alt="Find Hub" className="navbar-logo" />
       </div>
       <div className="navbar-right">
         {user ? (

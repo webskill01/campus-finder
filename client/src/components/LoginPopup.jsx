@@ -132,7 +132,7 @@ export default function LoginPopup() {
   if (step === 'email') {
     return (
       <form onSubmit={handleEmailSubmit}>
-        <div className="popup-title">Sign in to CampusFinder</div>
+        <div className="popup-title">Sign in to Find Hub</div>
         <div className="popup-subtitle">Enter your college email</div>
         <div className="form-field" style={{ animationDelay: '0ms' }}>
           <label className="form-label">College Email</label>
